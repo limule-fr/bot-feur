@@ -35,7 +35,7 @@ client.on('messageCreate', async (message) => {
 
     const texte = message.content.toLowerCase().trim();
 
-    const estPourquoi = texte === "pourquoi";
+    const estPourquoi = /\bpourquoi\b/i.test(texte);
 
     const estQuoi =
         variantes.includes(texte) ||
