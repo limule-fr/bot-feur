@@ -19,27 +19,11 @@ const client = new Client({
 const cooldown = new Map();
 const COOLDOWN_TIME = 30000;
 
-const variantes = [
-    'quoi',
-    'koi',
-    'kwa',
-    'qoi',
-    'quoa'
-];
+const variantes = ['quoi', 'koi', 'kwa', 'qoi', 'quoa'];
 
 const MOTS = [
-    "couille",
-    "couilles",
-    "zizi",
-    "cul",
-    "fesse",
-    "fesses",
-    "bite",
-    "sexe",
-    "nichon",
-    "nichons",
-    "boob",
-    "boobs"
+    "couille","couilles","zizi","cul","fesse","fesses",
+    "bite","sexe","nichon","nichons","boob","boobs"
 ];
 
 client.once('ready', () => {
@@ -51,16 +35,15 @@ client.on('messageCreate', async (message) => {
 
     const texte = message.content.toLowerCase().trim();
 
-    const contientQuoi =
-        variantes.some(v => texte.includes(v)) ||
-        /\bquoi\b/i.test(texte) ||
-        /quo+i+/i.test(texte);
+    const estPourquoi = texte === "pourquoi";
 
-    const contientPourquoi = /\bpourquoi\b/i.test(texte);
+    const estQuoi =
+        variantes.includes(texte) ||
+        /^quo+i+$/i.test(texte);
 
     const contientMotsInterdits = MOTS.some(mot => texte.includes(mot));
 
-    if (!contientQuoi && !contientPourquoi && !contientMotsInterdits) return;
+    if (!estQuoi && !estPourquoi && !contientMotsInterdits) return;
 
     const userId = message.author.id;
     const now = Date.now();
@@ -76,7 +59,11 @@ client.on('messageCreate', async (message) => {
         return message.channel.send("gros cochon 🐷");
     }
 
-    if (contientQuoi) {
+    if (estPourquoi) {
+        return message.reply('Parce que Feur');
+    }
+
+    if (estQuoi) {
         const feur = [
             'Feur',
             'FEUR 😂',
@@ -91,10 +78,6 @@ client.on('messageCreate', async (message) => {
         return message.reply(
             feur[Math.floor(Math.random() * feur.length)]
         );
-    }
-
-    if (contientPourquoi) {
-        return message.reply('Parce que Feur');
     }
 });
 
