@@ -25,7 +25,7 @@ const MOTS_SEXUELS = [
 "bite","sexe","nichon","nichons","boob","boobs"
 ];
 
-const MOTS_RACISTES = ["bougnoule","bougnoules","arabe","arabes"];
+const MOTS_RACISTES = ["bougnoule","bougnoules","arabe","arabes","nega","negas"];
 
 function run(cmd) {
 execSync(cmd, { stdio: "inherit" });
