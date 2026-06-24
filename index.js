@@ -1,12 +1,11 @@
+require('dotenv').config();
 const http = require('http');
+const { Client, GatewayIntentBits } = require('discord.js');
 
 http.createServer((req, res) => {
     res.writeHead(200);
     res.end('Bot online');
 }).listen(process.env.PORT || 3000);
-
-require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -21,10 +20,12 @@ const COOLDOWN_TIME = 30000;
 
 const variantes = ['quoi', 'koi', 'kwa', 'qoi', 'quoa'];
 
-const MOTS = [
+const MOTS_SEXUELS = [
     "couille","couilles","zizi","cul","fesse","fesses",
     "bite","sexe","nichon","nichons","boob","boobs"
 ];
+
+const MOTS_RACISTES = [ "bougnoule","arabe","arabes","bougnoules"];
 
 client.once('ready', () => {
     console.log(`Connecté en tant que ${client.user.tag}`);
@@ -41,9 +42,10 @@ client.on('messageCreate', async (message) => {
         variantes.includes(texte) ||
         /^quo+i+$/i.test(texte);
 
-    const contientMotsInterdits = MOTS.some(mot => texte.includes(mot));
+    const contientSexuel = MOTS_SEXUELS.some(mot => texte.includes(mot));
+    const contientHaineux = MOTS_RACISTES.some(mot => texte.includes(mot));
 
-    if (!estQuoi && !estPourquoi && !contientMotsInterdits) return;
+    if (!estQuoi && !estPourquoi && !contientSexuel && !contientHaineux) return;
 
     const userId = message.author.id;
     const now = Date.now();
@@ -55,8 +57,12 @@ client.on('messageCreate', async (message) => {
 
     cooldown.set(userId, now);
 
-    if (contientMotsInterdits) {
+    if (contientSexuel) {
         return message.channel.send("gros cochon 🐷");
+    }
+
+    if (contientHaineux) {
+        return message.channel.send("sale raciste");
     }
 
     if (estPourquoi) {
