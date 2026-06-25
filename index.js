@@ -4,7 +4,6 @@ const http = require('http');
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events } = require('discord.js');
 const { execSync } = require('child_process');
 
-// Serveur HTTP pour Render
 http.createServer((req, res) => {
     res.writeHead(200);
     res.end('Bot online');
@@ -19,8 +18,6 @@ const client = new Client({
 });
 
 const OWNER_ID = process.env.OWNER_ID;
-
-const variantes = ['quoi', 'koi', 'kwa', 'qoi', 'quoa'];
 
 const MOTS_SEXUELS = [
     "couille","couilles","zizi","cul","fesse","fesses",
@@ -45,8 +42,7 @@ client.on('messageCreate', async (message) => {
     const estPourquoi = /\bpourquoi\b/i.test(texte);
 
     const estQuoi =
-        variantes.includes(texte) ||
-        /^quo+i+$/i.test(texte);
+        /(^| )(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(texte);
 
     const contientSexuel = MOTS_SEXUELS.some(mot => texte.includes(mot));
     const contientHaineux = MOTS_RACISTES.some(mot => texte.includes(mot));
