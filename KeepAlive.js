@@ -1,7 +1,10 @@
 const http = require("http");
 
-setInterval(() => {
-  fetch("https://bot-feur-3qcy.onrender.com");
-}, 5 * 60 * 1000);
-    });
-}, 5 * 60 * 1000);
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end("Bot online");
+});
+
+server.listen(process.env.PORT || 3000, () => {
+    console.log("KeepAlive actif");
+});
