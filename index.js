@@ -1,7 +1,14 @@
 require('dotenv').config();
 
 const http = require('http');
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events } = require('discord.js');
+const {
+    Client,
+    GatewayIntentBits,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    Events
+} = require('discord.js');
 const { execSync } = require('child_process');
 
 http.createServer((req, res) => {
@@ -24,8 +31,46 @@ const MOTS_SEXUELS = [
     "bite","sexe","nichon","nichons","boob","boobs"
 ];
 
-const MOTS_RACISTES = ["bougnoule","bougnoules","arabe","arabes","nega","negas","bougnoul","negro",
-                      "negros"];
+const MOTS_RACISTES = [
+    "bougnoule","bougnoules","arabe","arabes",
+    "nega","negas","bougnoul","negro","negros"
+];
+
+const REGLES = [
+    {
+        match: (t) =>
+            /\b67\b/.test(t) ||
+            /\bsix\s*seven\b/i.test(t) ||
+            /\b6\s*7\b/.test(t),
+
+        responses: ["va te faire foutre","pas de ça ici","pourquoi faire ?","bro tu es genant"]
+    },
+
+    {
+        match: (t) => /\bpourquoi\b/i.test(t),
+        responses: ["Parce que Feur"]
+    },
+
+    {
+        match: (t) =>
+            /(^| )(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(t),
+
+        responses: [
+            "Feur",
+            "FEUR 😂",
+            "Feuuur",
+            "feur 😏",
+            "feur sale kk",
+            "koubhé",
+            "quoikoufeur",
+            "j en ai marre de toi je répond pas"
+        ]
+    }
+];
+
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
 
 function run(cmd) {
     execSync(cmd, { stdio: "inherit" });
@@ -39,14 +84,6 @@ client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
     const texte = message.content.toLowerCase().trim();
-
-    const estPourquoi = /\bpourquoi\b/i.test(texte);
-
-    const estQuoi =
-        /(^| )(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(texte);
-
-    const contientSexuel = MOTS_SEXUELS.some(mot => texte.includes(mot));
-    const contientHaineux = MOTS_RACISTES.some(mot => texte.includes(mot));
 
     if (message.content === "!deploy") {
         if (message.author.id !== OWNER_ID) return;
@@ -64,33 +101,16 @@ client.on('messageCreate', async (message) => {
         });
     }
 
-    if (!estQuoi && !estPourquoi && !contientSexuel && !contientHaineux) return;
-
-    if (contientSexuel) {
+    if (MOTS_SEXUELS.some(m => texte.includes(m)))
         return message.channel.send("gros cochon 🐷");
-    }
 
-    if (contientHaineux) {
+    if (MOTS_RACISTES.some(m => texte.includes(m)))
         return message.channel.send("SALE RACISTE!");
-    }
 
-    if (estPourquoi) {
-        return message.reply('Parce que Feur');
-    }
-
-    if (estQuoi) {
-        const feur = [
-            'Feur',
-            'FEUR 😂',
-            'Feuuur',
-            'feur 😏',
-            'feur sale kk',
-            'koubhé',
-            'quoikoufeur',
-            'j en ai marre de toi je répond pas'
-        ];
-
-        return message.reply(feur[Math.floor(Math.random() * feur.length)]);
+    for (const rule of REGLES) {
+        if (rule.match(texte)) {
+            return message.reply(pick(rule.responses));
+        }
     }
 });
 
@@ -103,15 +123,11 @@ client.on(Events.InteractionCreate, async interaction => {
 
         try {
             run("node deploy.js");
-
             await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
 
-            setTimeout(() => {
-                process.exit(0);
-            }, 1500);
-
+            setTimeout(() => process.exit(0), 1500);
         } catch (e) {
-            await interaction.followUp({ content: "❌ Erreur Git (rien à commit ?)" });
+            await interaction.followUp({ content: "❌ Erreur Git ou deploy.js" });
         }
     }
 });
