@@ -24,7 +24,8 @@ const MOTS_SEXUELS = [
     "bite","sexe","nichon","nichons","boob","boobs"
 ];
 
-const MOTS_RACISTES = ["bougnoule","bougnoules","arabe","arabes","nega","negas"];
+const MOTS_RACISTES = ["bougnoule","bougnoules","arabe","arabes","nega","negas","bougnoul","negro",
+                      "negros"];
 
 function run(cmd) {
     execSync(cmd, { stdio: "inherit" });
@@ -101,9 +102,7 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({ content: "Déploiement en cours...", ephemeral: true });
 
         try {
-            run("git add .");
-            run('git commit -m "bot ready"');
-            run("git push origin main");
+            run("node deploy.js");
 
             await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
 
