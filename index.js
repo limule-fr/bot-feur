@@ -1,5 +1,4 @@
 require('dotenv').config();
-
 const http = require('http');
 const {
 Client,
@@ -27,14 +26,24 @@ GatewayIntentBits.MessageContent
 const OWNER_ID = process.env.OWNER_ID;
 
 const MOTS_SEXUELS = [
-"couille","couilles","zizi","cul","fesse","fesses",
-"bite","sexe","nichon","nichons","boob","boobs"
+"couille", "couilles", "zizi", "cul", "fesse", "fesses",
+"bite", "sexe", "nichon", "nichons", "boob", "boobs"
 ];
 
+const REGEX_MOTS_SEXUELS = new RegExp(
+`\\b(?:${MOTS_SEXUELS.join("|")})\\b`,
+"i"
+);
+
 const MOTS_RACISTES = [
-"bougnoule","bougnoules","arabe","arabes",
-"nega","negas","bougnoul","negro","negros"
+"bougnoule", "bougnoules", "arabe", "arabes",
+"nega", "negas", "bougnoul", "negro", "negros"
 ];
+
+const REGEX_MOTS_RACISTES = new RegExp(
+`\\b(?:${MOTS_RACISTES.join("|")})\\b`,
+"i"
+);
 
 const REGLES = [
 {
@@ -42,8 +51,12 @@ match: (t) =>
 /\b67\b/.test(t) ||
 /\bsix\s*seven\b/i.test(t) ||
 /\b6\s*7\b/.test(t),
-
-responses: ["va te faire foutre","pas de ça ici","pourquoi faire ?","bro tu es genant"]
+responses: [
+"va te faire foutre",
+"pas de ça ici",
+"pourquoi faire ?",
+"bro tu es genant"
+]
 },
 {
 match: (t) => /\bpourquoi\b/i.test(t),
@@ -52,7 +65,6 @@ responses: ["Parce que Feur"]
 {
 match: (t) =>
 /(^| )(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(t),
-
 responses: [
 "Feur",
 "FEUR 😂",
@@ -119,11 +131,11 @@ components: [row]
 });
 }
 
-if (MOTS_SEXUELS.some(m => texte.includes(m))) {
+if (REGEX_MOTS_SEXUELS.test(texte)) {
 return safeSend(message.channel, "gros cochon 🐷");
 }
 
-if (MOTS_RACISTES.some(m => texte.includes(m))) {
+if (REGEX_MOTS_RACISTES.test(texte)) {
 return safeSend(message.channel, "SALE RACISTE!");
 }
 
@@ -140,18 +152,26 @@ if (interaction.user.id !== OWNER_ID) return;
 
 if (interaction.customId === 'deploy_git') {
 try {
-await interaction.reply({ content: "Déploiement en cours...", ephemeral: true });
+await interaction.reply({
+content: "Déploiement en cours...",
+ephemeral: true
+});
 
 run("node deploy.js");
 
-await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
+await interaction.followUp({
+content: "✅ Push terminé. Redémarrage..."
+});
 
 setTimeout(() => process.exit(0), 1500);
 
 } catch (e) {
 console.error(e);
+
 try {
-await interaction.followUp({ content: "❌ Erreur Git ou deploy.js" });
+await interaction.followUp({
+content: "❌ Erreur Git ou deploy.js"
+});
 } catch {}
 }
 }
