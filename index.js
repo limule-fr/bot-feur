@@ -26,8 +26,18 @@ GatewayIntentBits.MessageContent
 const OWNER_ID = process.env.OWNER_ID;
 
 const MOTS_SEXUELS = [
-"couille", "couilles", "zizi", "cul", "fesse", "fesses",
-"bite", "sexe", "nichon", "nichons", "boob", "boobs"
+"couille",
+"couilles",
+"zizi",
+"cul",
+"fesse",
+"fesses",
+"bite",
+"sexe",
+"nichon",
+"nichons",
+"boob",
+"boobs"
 ];
 
 const REGEX_MOTS_SEXUELS = new RegExp(
@@ -36,8 +46,15 @@ const REGEX_MOTS_SEXUELS = new RegExp(
 );
 
 const MOTS_RACISTES = [
-"bougnoule", "bougnoules", "arabe", "arabes",
-"nega", "negas", "bougnoul", "negro", "negros"
+"bougnoule",
+"bougnoules",
+"arabe",
+"arabes",
+"nega",
+"negas",
+"bougnoul",
+"negro",
+"negros"
 ];
 
 const REGEX_MOTS_RACISTES = new RegExp(
@@ -60,7 +77,9 @@ responses: [
 },
 {
 match: (t) => /\bpourquoi\b/i.test(t),
-responses: ["Parce que Feur"]
+responses: [
+"Parce que Feur"
+]
 },
 {
 match: (t) =>
@@ -90,7 +109,7 @@ async function safeSend(channel, content) {
 try {
 return await channel.send(content);
 } catch (e) {
-console.error("send error", e.code);
+console.error("send error", e);
 }
 }
 
@@ -98,7 +117,7 @@ async function safeReply(message, content) {
 try {
 return await message.reply(content);
 } catch (e) {
-console.error("reply error", e.code);
+console.error("reply error", e);
 }
 }
 
@@ -106,52 +125,92 @@ client.on("error", console.error);
 process.on("unhandledRejection", console.error);
 process.on("uncaughtException", console.error);
 
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
+
 console.log(`Connecté en tant que ${client.user.tag}`);
+
+try {
+
+await client.user.setPresence({
+status: "online",
+activities: [
+{
+name: "vos messages",
+type: 3
+}
+]
 });
 
-client.on('messageCreate', async (message) => {
+console.log("Présence mise à jour.");
+
+} catch (err) {
+
+console.error(err);
+
+}
+
+});
+
+client.on("messageCreate", async (message) => {
+
 if (message.author.bot) return;
 
 const texte = message.content.toLowerCase().trim();
 
 if (message.content === "!deploy") {
+
 if (message.author.id !== OWNER_ID) return;
 
 const row = new ActionRowBuilder().addComponents(
+
 new ButtonBuilder()
-.setCustomId('deploy_git')
-.setLabel('🚀 Push GitHub')
+.setCustomId("deploy_git")
+.setLabel("🚀 Push GitHub")
 .setStyle(ButtonStyle.Success)
+
 );
 
 return safeSend(message.channel, {
+
 content: "Déploiement disponible :",
 components: [row]
+
 });
+
 }
 
 if (REGEX_MOTS_SEXUELS.test(texte)) {
+
 return safeSend(message.channel, "gros cochon 🐷");
+
 }
 
 if (REGEX_MOTS_RACISTES.test(texte)) {
-return safeSend(message.channel, "SALE RACISTE!");
+
+return safeSend(message.channel, "SALE RACISTE !");
+
 }
 
 for (const rule of REGLES) {
+
 if (rule.match(texte)) {
+
 return safeReply(message, pick(rule.responses));
+
 }
-}
-});
+
+}});
 
 client.on(Events.InteractionCreate, async interaction => {
+
 if (!interaction.isButton()) return;
+
 if (interaction.user.id !== OWNER_ID) return;
 
-if (interaction.customId === 'deploy_git') {
+if (interaction.customId === "deploy_git") {
+
 try {
+
 await interaction.reply({
 content: "Déploiement en cours...",
 ephemeral: true
@@ -166,15 +225,21 @@ content: "✅ Push terminé. Redémarrage..."
 setTimeout(() => process.exit(0), 1500);
 
 } catch (e) {
+
 console.error(e);
 
 try {
+
 await interaction.followUp({
 content: "❌ Erreur Git ou deploy.js"
 });
+
 } catch {}
+
 }
+
 }
+
 });
 
 client.login(process.env.TOKEN);
