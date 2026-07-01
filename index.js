@@ -37,7 +37,8 @@ const MOTS_SEXUELS = [
 "nichon",
 "nichons",
 "boob",
-"boobs"
+"boobs",
+"paf"
 ];
 
 const REGEX_MOTS_SEXUELS = new RegExp(
