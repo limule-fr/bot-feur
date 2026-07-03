@@ -60,7 +60,8 @@ const MOTS_RACISTES = [
 "negro",
 "negros",
 "nègre",
-"nigers"
+"nigers",
+"nigger"
 ];
 
 const REGEX_MOTS_RACISTES = new RegExp(
