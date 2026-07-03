@@ -38,7 +38,10 @@ const MOTS_SEXUELS = [
 "nichons",
 "boob",
 "boobs",
-"paf"
+"paf",
+"paffs",
+"sucer",
+"gor"
 ];
 
 const REGEX_MOTS_SEXUELS = new RegExp(
@@ -55,7 +58,9 @@ const MOTS_RACISTES = [
 "negas",
 "bougnoul",
 "negro",
-"negros"
+"negros",
+"nègre",
+"nigers"
 ];
 
 const REGEX_MOTS_RACISTES = new RegExp(
