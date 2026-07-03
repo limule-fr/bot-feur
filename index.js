@@ -41,7 +41,10 @@ const MOTS_SEXUELS = [
 "paf",
 "paffs",
 "sucer",
-"gor"
+"gor",
+"br",
+"branlette",
+"branle"
 ];
 
 const REGEX_MOTS_SEXUELS = new RegExp(
@@ -187,9 +190,18 @@ components: [row]
 }
 
 if (REGEX_MOTS_SEXUELS.test(texte)) {
+    const reponses = [
+        "gros cochon 🐷",
+        "sale porc",
+        "you dirty pervert",
+        "hmm, tu m'exite",
+        "fait voir ?"
+    ];
 
-return safeSend(message.channel, "gros cochon 🐷");
-
+    return safeSend(
+        message.channel,
+        reponses[Math.floor(Math.random() * reponses.length)]
+    );
 }
 
 if (REGEX_MOTS_RACISTES.test(texte)) {
