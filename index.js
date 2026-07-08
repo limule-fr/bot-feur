@@ -19,8 +19,6 @@ res.end('Bot online');
 const client = new Client({
 intents: [
 GatewayIntentBits.Guilds,
-GatewayIntentBits.GuildMessages,
-GatewayIntentBits.MessageContent
 ]
 });
 
@@ -133,9 +131,13 @@ console.error("reply error", e);
 }
 }
 
-client.on("error", console.error);
-process.on("unhandledRejection", console.error);
-process.on("uncaughtException", console.error);
+client.on("error", err => console.error("CLIENT ERROR :", err));
+
+process.on("unhandledRejection", err => console.error("REJECTION :", err));
+
+process.on("uncaughtException", err => console.error("EXCEPTION :", err));
+
+
 
 client.once("ready", async () => {
 
