@@ -265,13 +265,12 @@ console.log("Version discord.js :", require("discord.js").version);
 console.log("TOKEN présent :", !!process.env.TOKEN);
 console.log("PORT :", process.env.PORT);
 
-(async () => {
-    console.log("Avant login");
+console.log("Tentative de connexion Discord...");
 
-    try {
-        const result = await client.login(process.env.TOKEN);
-        console.log("Après login :", result ? "OK" : "Aucun résultat");
-    } catch (err) {
-        console.error("Erreur login :", err);
-    }
-})();
+client.login(process.env.TOKEN)
+  .then(() => {
+    console.log("✅ Login Discord réussi");
+  })
+  .catch(err => {
+    console.error("❌ Erreur login Discord :", err);
+  });

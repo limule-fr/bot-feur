@@ -19,8 +19,15 @@ client.on("messageCreate", message => {
 });
 
 client.on("error", console.error);
-client.on("debug", console.log);
 
+console.log("TOKEN présent :", !!process.env.TOKEN);
+console.log("Longueur token :", process.env.TOKEN?.length);
 console.log("Tentative de connexion...");
 
-client.login(process.env.TOKEN).catch(console.error);
+client.login(process.env.TOKEN)
+  .then(() => {
+    console.log("✅ Login Discord réussi");
+  })
+  .catch(err => {
+    console.error("❌ Erreur login Discord :", err);
+  });
