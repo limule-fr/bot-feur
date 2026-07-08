@@ -266,12 +266,12 @@ console.log("TOKEN présent :", !!process.env.TOKEN);
 console.log("PORT :", process.env.PORT);
 
 (async () => {
-  console.log("Avant login");
+    console.log("Avant login");
 
-  try {
-    const result = await client.login(process.env.TOKEN);
-    console.log("Après login :", result ? "OK" : "Aucun résultat");
-  } catch (err) {
-    console.error("Erreur login :", err);
-  }
+    try {
+        const result = await client.login(process.env.TOKEN);
+        console.log("Après login :", result ? "OK" : "Aucun résultat");
+    } catch (err) {
+        console.error("Erreur login :", err);
+    }
 })();
