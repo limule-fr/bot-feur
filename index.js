@@ -79,10 +79,10 @@ match: (t) =>
 /\bsix\s*seven\b/i.test(t) ||
 /\b6\s*7\b/.test(t),
 responses: [
-"va te faire foutre",
 "pas de ça ici",
 "pourquoi faire ?",
-"bro tu es genant"
+"bro tu es genant",
+"je t'en supplie, non"
 ]
 },
 {
