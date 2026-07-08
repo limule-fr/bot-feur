@@ -269,10 +269,21 @@ console.log("PORT :", process.env.PORT);
 console.log("Avant login - toutes les déclarations chargées");
 console.log("Tentative de connexion Discord...");
 
+console.log("Début login...");
+
 client.login(process.env.TOKEN)
-  .then(() => {
-    console.log("✅ Login Discord réussi");
-  })
-  .catch(err => {
-    console.error("❌ Erreur login Discord :", err);
-  });
+.then(token => {
+    console.log("✅ Login réussi, token reçu");
+})
+.catch(err => {
+    console.error("❌ Login erreur :", err);
+});
+
+setTimeout(() => {
+    console.log("⏱️ 30 secondes après login, toujours vivant");
+}, 30000);
+
+
+
+
+
