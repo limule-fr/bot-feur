@@ -261,4 +261,8 @@ content: "❌ Erreur Git ou deploy.js"
 
 });
 
-client.login(process.env.TOKEN);
+console.log("Connexion à Discord...");
+
+client.login(process.env.TOKEN)
+  .then(() => console.log("Login lancé"))
+  .catch(console.error);
