@@ -134,7 +134,7 @@ client.on("error", console.error);
 process.on("unhandledRejection", console.error);
 process.on("uncaughtException", console.error);
 
-client.once(Events.ClientReady, async () => {
+client.once("ready", async () => {
 
 console.log(`Connecté en tant que ${client.user.tag}`);
 
