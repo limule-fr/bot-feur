@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const http = require('http');
 const {
 Client,
@@ -26,25 +26,25 @@ GatewayIntentBits.MessageContent
 const OWNER_ID = process.env.OWNER_ID;
 
 const MOTS_SEXUELS = [
-"couille",
-"couilles",
-"zizi",
-"cul",
-"fesse",
-"fesses",
-"bite",
-"sexe",
-"nichon",
-"nichons",
-"boob",
-"boobs",
-"paf",
-"paffs",
-"sucer",
-"gor",
-"br",
-"branlette",
-"branle"
+    "couille",
+    "couilles",
+    "zizi",
+    "cul",
+    "fesse",
+    "fesses",
+    "bite",
+    "sexe",
+    "nichon",
+    "nichons",
+    "boob",
+    "boobs",
+    "paf",
+    "paffs",
+    "sucer",
+    "gor",
+    "br",
+    "branlette",
+    "branle"
 ];
 
 const REGEX_MOTS_SEXUELS = new RegExp(
@@ -93,8 +93,7 @@ responses: [
 },
 {
 match: (t) =>
-/(^| )(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(t),
-responses: [
+/\b(quoi+|koi+|kwa+|qoi+|quoa+)\b/i.test(t),responses: [
 "Feur",
 "FEUR 😂",
 "Feuuur",
@@ -276,21 +275,3 @@ console.log("PORT :", process.env.PORT);
     console.error("Erreur login :", err);
   }
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
