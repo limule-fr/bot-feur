@@ -261,10 +261,11 @@ content: "❌ Erreur Git ou deploy.js"
 
 });
 
-console.log("Connexion à Discord...");
-
+console.log("Version Node :", process.version);
+console.log("Version discord.js :", require("discord.js").version);
 console.log("TOKEN présent :", !!process.env.TOKEN);
-console.log("Longueur du token :", process.env.TOKEN?.length);
+console.log("PORT :", process.env.PORT);
+});
 client.login(process.env.TOKEN)
   .then(() => {
     console.log("✅ Connecté à Discord");
