@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("Début chargement index.js");
 const http = require('http');
 const {
 Client,
@@ -265,6 +266,7 @@ console.log("Version discord.js :", require("discord.js").version);
 console.log("TOKEN présent :", !!process.env.TOKEN);
 console.log("PORT :", process.env.PORT);
 
+console.log("Avant login - toutes les déclarations chargées");
 console.log("Tentative de connexion Discord...");
 
 client.login(process.env.TOKEN)
