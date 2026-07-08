@@ -21,6 +21,7 @@ intents: [
 GatewayIntentBits.Guilds,
 ]
 });
+console.log("Client créé");
 
 const OWNER_ID = process.env.OWNER_ID;
 
@@ -224,7 +225,7 @@ return safeReply(message, pick(rule.responses));
 
 }});
 
-client.on(Events.InteractionCreate, async interaction => {
+//client.on(Events.InteractionCreate, async interaction => {
 
 if (!interaction.isButton()) return;
 
