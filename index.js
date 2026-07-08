@@ -225,6 +225,44 @@ return safeReply(message, pick(rule.responses));
 
 }});
 
+client.on(Events.InteractionCreate, async interaction => {
+
+    if (!interaction.isButton()) return;
+
+    if (interaction.user.id !== OWNER_ID) return;
+
+    if (interaction.customId === "deploy_git") {
+
+        try {
+
+            await interaction.reply({
+                content: "Déploiement en cours...",
+                ephemeral: true
+            });
+
+            run("node deploy.js");
+
+            await interaction.followUp({
+                content: "✅ Push terminé. Redémarrage..."
+            });
+
+            setTimeout(() => process.exit(0), 1500);
+
+        } catch (e) {
+
+            console.error(e);
+
+            try {
+                await interaction.followUp({
+                    content: "❌ Erreur Git ou deploy.js"
+                });
+            } catch {}
+
+        }
+    }
+
+});
+
 console.log("Version Node :", process.version);
 console.log("Version discord.js :", require("discord.js").version);
 console.log("TOKEN présent :", !!process.env.TOKEN);
@@ -246,8 +284,3 @@ client.login(process.env.TOKEN)
 setTimeout(() => {
     console.log("⏱️ 30 secondes après login, toujours vivant");
 }, 30000);
-
-
-
-
-
