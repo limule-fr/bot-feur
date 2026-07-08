@@ -9,7 +9,7 @@ ButtonBuilder,
 ButtonStyle,
 Events
 } = require('discord.js');
-const { execSync } = require('child_process');
+//const { execSync } = require('child_process');
 
 http.createServer((req, res) => {
 res.writeHead(200);
@@ -111,9 +111,11 @@ function pick(arr) {
 return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/*
 function run(cmd) {
 execSync(cmd, { stdio: "inherit" });
 }
+*/
 
 async function safeSend(channel, content) {
 try {
