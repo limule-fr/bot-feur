@@ -103,7 +103,7 @@ match: (t) =>
 "feur sale kk",
 "koubhé",
 "quoikoufeur",
-"j en ai marre de toi je répond pas"
+"j en ai marre de toi je répond pas",
 "https://klipy.com/gifs/feur-theobabac"
 ]
 }
