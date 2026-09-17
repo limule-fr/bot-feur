@@ -1,6 +1,7 @@
 const { execSync } = require("child_process");
 
-const commitMessage = process.argv.slice(2).join(" ") || "bot ready";
+const maintenant = new Date().toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
+const commitMessage = process.argv.slice(2).join(" ") || `Déploiement auto - ${maintenant}`;
 
 function run(cmd) {
     console.log(`\n> ${cmd}`);
