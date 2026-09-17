@@ -14,7 +14,9 @@ const { execSync } = require('child_process');
 http.createServer((req, res) => {
 res.writeHead(200);
 res.end('Bot online');
-}).listen(process.env.PORT);
+}).listen(process.env.PORT || 3000, () => {
+    console.log(`Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`);
+});
 
 const client = new Client({
 intents: [
@@ -169,9 +171,22 @@ console.error(err);
 
 client.on("messageCreate", async (message) => {
 
-if (message.author.bot) return;
+    if (message.author.bot) return;
 
-const texte = message.content.toLowerCase().trim();
+    const texte = message.content.toLowerCase().trim();
+
+    if (message.mentions.has(client.user.id) && !message.mentions.everyone) {
+        const reponsesPing = [
+            "Quoi ? 👀",
+            "On m'appelle ? 🤖",
+            "Dis feur pour voir.",
+            "Laisse-moi tranquille, je regarde vos messages. 🤫",
+            "Oui, maître ?"
+        ];
+        return safeReply(message, pick(reponsesPing));
+    }
+
+
 
 if (message.content === "!deploy") {
 
@@ -200,7 +215,7 @@ if (REGEX_MOTS_SEXUELS.test(texte)) {
         "gros cochon 🐷",
         "sale porc",
         "you dirty pervert",
-        "hmm, tu m'exite",
+        "hmm, tu m'excite",
         "fait voir ?"
     ];
 
