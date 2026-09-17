@@ -181,7 +181,8 @@ client.on("messageCreate", async (message) => {
             "On m'appelle ? 🤖",
             "Dis feur pour voir.",
             "Laisse-moi tranquille, je regarde vos messages. 🤫",
-            "Oui, maître ?"
+            "Oui, maître ?",
+            "tg tu es chiant"
         ];
         return safeReply(message, pick(reponsesPing));
     }
