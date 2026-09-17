@@ -141,7 +141,7 @@ process.on("uncaughtException", err => console.error("EXCEPTION :", err));
 
 
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
 
 console.log(`Connecté en tant que ${client.user.tag}`);
 
