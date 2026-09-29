@@ -49,18 +49,25 @@ async function saveStats(stats) {
     fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 4));
 }
 
-// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API de manière asynchrone
-// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API de manière asynchrone (Sécurisé)
+// 🌐 Serveur HTTP avec détection d'URL nettoyée et robuste (Unique et Nettoyé)
 http.createServer(async (req, res) => {
-    if (req.url === '/api/stats' && req.method === 'GET') {
-        // En-têtes CORS complets pour autoriser l'accès depuis n'importe quel navigateur sans blocage
+    // On nettoie l'URL pour supprimer les espaces ou slashs superflus à la fin
+    const cleanUrl = req.url.split('?')[0].replace(/\/\$/, '');
+
+    // 📊 Route de l'API JSON (Détection robuste)
+    if (cleanUrl === '/api/stats') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         res.setHeader('Content-Type', 'application/json');
         
+        if (req.method === 'OPTIONS') {
+            res.writeHead(200);
+            return res.end();
+        }
+
         try {
-            const stats = await getStats(); // Lecture asynchrone de la base de données
+            const stats = await getStats(); // Lecture asynchrone
             const topUsers = Object.entries(stats.users)
                 .map(([id, data]) => ({ 
                     id, 
@@ -90,7 +97,9 @@ http.createServer(async (req, res) => {
             }));
         }
     } 
-    else if (req.url === '/' && req.method === 'GET') {
+    
+    // 🏠 Page d'accueil index.html (Pour l'URL racine '/' ou vide)
+    else if (cleanUrl === '' || cleanUrl === '/') {
         const htmlPath = path.join(__dirname, 'index.html');
         fs.readFile(htmlPath, 'utf8', (err, htmlContent) => {
             if (err) {
@@ -101,6 +110,8 @@ http.createServer(async (req, res) => {
             return res.end(htmlContent);
         });
     } 
+    
+    // ❌ Toutes les autres adresses inconnues
     else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Page non trouvée');
@@ -116,8 +127,6 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
-console.log("Client créé");
-
 console.log("Client créé");
 
 const OWNER_ID = process.env.OWNER_ID;
@@ -171,7 +180,7 @@ client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
     const texte = message.content.toLowerCase().trim();
 
-    // 🌐 NOUVELLE COMMANDE !site
+    // 🌐 COMMANDE !site mise à jour avec ton vrai lien public
     if (texte === "!site") {
         return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://onrender.com");
     }
@@ -241,23 +250,20 @@ client.on("messageCreate", async (message) => {
         return safeReply(message, `📊 **TABLEAU DE BORD DE LA FEUR-MANIA**\n\n🏆 **LE TOP DES VICTIMES :**\n${affichageTop}\n📈 **STATISTIQUES GLOBALES :**\n* 🎯 **Total de pièges déclenchés :** ${stats.total}`);
     }
 
-    if (message.mentions.has(client.user.id) && !message.mentions.everyone) {
-        return safeReply(message, pick(["Quoi ? 👀", "On m'appelle ? 🤖", "Dis feur pour voir.", "tg tu es chiant", "suce mes bits", "montre moi ta grosse clé usb !"]));
-    }
-
-    if (message.content === "!deploy") {
-        if (message.author.id !== OWNER_ID) return;
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("deploy_git").setLabel("🚀 Push GitHub").setStyle(ButtonStyle.Success));
-        return safeSend(message.channel, { content: "Déploiement disponible :", components: [row] });
-    }
-
-    for (const rule of REGLES) {
-        if (rule.match(texte)) {
-            const stats = await getStats(); // Lecture asynchrone
-            const userId = message.author.id;
-
-            stats.total += 1;
-            if (!stats.users[userId]) {
+if (message.mentions.has(client.user.id) && !message.mentions.everyone) {
+return safeReply(message, pick(["Quoi ? 👀", "On m'appelle ? 🤖", "Dis feur pour voir.", "tg tu es chiant", "suce mes bits", "montre moi ta grosse clé usb !"]));
+}
+if (message.content === "!deploy") {
+if (message.author.id !== OWNER_ID) return;
+const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("deploy_git").setLabel("🚀 Push GitHub").setStyle(ButtonStyle.Success));
+return safeSend(message.channel, { content: "Déploiement disponible :", components: [row] });
+}
+for (const rule of REGLES) {
+if (rule.match(texte)) {
+const stats = await getStats(); // Lecture asynchrone
+const userId = message.author.id;
+stats.total += 1;
+if (!stats.users[userId]) {
 stats.users[userId] = { username: message.author.username, count: 0, feur: 0, pourquoi: 0, sexuel: 0, raciste: 0, autre: 0 };
 }
 if (stats.users[userId].count === undefined) stats.users[userId].count = 0;
