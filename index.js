@@ -156,7 +156,7 @@ const REGLES = [
     {
         type: "feur",
         match: (t) => /\b(quoi+|koi+|kwa+|qoi+|quoa+|qwa+)\b/i.test(t),
-        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com"]
+        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com/gifs/feur-theobabac"]
     }
 ];
 
@@ -182,7 +182,7 @@ client.on("messageCreate", async (message) => {
 
     // 🌐 COMMANDE !site mise à jour avec ton vrai lien public
     if (texte === "!site") {
-        return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://onrender.com");
+        return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com/");
     }
 
     // 😈 COMMANDE SECRÈTE DE TRICHE (Réservée à l'owner du bot)
