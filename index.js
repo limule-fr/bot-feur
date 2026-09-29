@@ -127,11 +127,11 @@ const REGLES = [
         match: (t) => /\b67\b/.test(t) || /\bsix\s*seven\b/i.test(t) || /\b6\s*7\b/.test(t),
         responses: ["pas de ça ici", "pourquoi faire ?", "bro tu es genant", "je t'en supplie, non"]
     },
-    { type: "pourquoi", match: (t) => /\bpourquoi\b/i.test(t), responses: ["Parce que Feur", "car c'est comme ça", "bah jsp","pcq vas te faire foutre"] },
+    { type: "pourquoi", match: (t) => /\bpourquoi\b/i.test(t), responses: ["Parce que Feur", "car c'est comme ça", "bah jsp", "pcq vas te faire foutre"] },
     {
         type: "feur",
         match: (t) => /\b(quoi+|koi+|kwa+|qoi+|quoa+|qwa+)\b/i.test(t),
-        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com/gifs/feur-theobabac"]
+        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com"]
     }
 ];
 
@@ -157,9 +157,10 @@ client.on("messageCreate", async (message) => {
 
     // 🌐 NOUVELLE COMMANDE !site
     if (texte === "!site") {
-        return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com");
+        return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://onrender.com");
     }
-        // 😈 COMMANDE SECRÈTE DE TRICHE (Réservée à l'owner du bot)
+
+    // 😈 COMMANDE SECRÈTE DE TRICHE (Réservée à l'owner du bot)
     if (texte === "!injectertriche") {
         if (message.author.id !== OWNER_ID) return;
 
@@ -196,19 +197,16 @@ client.on("messageCreate", async (message) => {
             }
         };
 
-        // Recalcul automatique du total général par sécurité
         let totalGlobal = 0;
         Object.values(statsTrichees.users).forEach(u => {
             totalGlobal += (u.count || 0);
         });
         statsTrichees.total = totalGlobal;
 
-        // Injection dans Redis en ligne
         await saveStats(statsTrichees);
 
         return safeReply(message, `🚀 **Triche injectée avec succès depuis Render !** Total global : ${totalGlobal} fautes. Tu peux aller voir le site.`);
     }
-
 
     if (texte === "!stats") {
         const stats = await getStats(); // Lecture asynchrone
@@ -244,40 +242,37 @@ client.on("messageCreate", async (message) => {
 
             stats.total += 1;
             if (!stats.users[userId]) {
-                stats.users[userId] = { username: message.author.username, count: 0, feur: 0, pourquoi: 0, sexuel: 0, raciste: 0, autre: 0 };
-            }
-            
-            if (stats.users[userId].count === undefined) stats.users[userId].count = 0;
-            if (stats.users[userId].feur === undefined) stats.users[userId].feur = 0;
-            if (stats.users[userId].pourquoi === undefined) stats.users[userId].pourquoi = 0;
-            if (stats.users[userId].sexuel === undefined) stats.users[userId].sexuel = 0;
-            if (stats.users[userId].raciste === undefined) stats.users[userId].raciste = 0;
-            if (stats.users[userId].autre === undefined) stats.users[userId].autre = 0;
-
-            stats.users[userId].count += 1;
-            if (rule.type && stats.users[userId][rule.type] !== undefined) {
-                stats.users[userId][rule.type] += 1;
-            } else {
-                stats.users[userId].autre += 1;
-            }
-            stats.users[userId].username = message.author.username;
-
-            await saveStats(stats); // Écriture asynchrone
-
-            return safeReply(message, pick(rule.responses));
-        }
-    }
+stats.users[userId] = { username: message.author.username, count: 0, feur: 0, pourquoi: 0, sexuel: 0, raciste: 0, autre: 0 };
+}
+if (stats.users[userId].count === undefined) stats.users[userId].count = 0;
+if (stats.users[userId].feur === undefined) stats.users[userId].feur = 0;
+if (stats.users[userId].pourquoi === undefined) stats.users[userId].pourquoi = 0;
+if (stats.users[userId].sexuel === undefined) stats.users[userId].sexuel = 0;
+if (stats.users[userId].raciste === undefined) stats.users[userId].raciste = 0;
+if (stats.users[userId].autre === undefined) stats.users[userId].autre = 0;
+stats.users[userId].count += 1;
+if (rule.type && stats.users[userId][rule.type] !== undefined) {
+stats.users[userId][rule.type] += 1;
+} else {
+stats.users[userId].autre += 1;
+}
+stats.users[userId].username = message.author.username;
+await saveStats(stats); // Écriture asynchrone
+return safeReply(message, pick(rule.responses));
+}
+}
 });
-
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isButton() || interaction.user.id !== OWNER_ID) return;
-    if (interaction.customId === "deploy_git") {
-        try {
-            await interaction.reply({ content: "Déploiement en cours...", ephemeral: true });
-            run("node deploy.js");
-            await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
-            setTimeout(() => process.exit(0), 1500);
-} catch (e) { console.error(e); }
+if (!interaction.isButton() || interaction.user.id !== OWNER_ID) return;
+if (interaction.customId === "deploy_git") {
+try {
+await interaction.reply({ content: "Déploiement en cours...", ephemeral: true });
+run("node deploy.js");
+await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
+setTimeout(() => process.exit(0), 1500);
+} catch (e) {
+console.error(e);
+}
 }
 });
 client.login(process.env.TOKEN).catch(err => console.error("❌ Login erreur :", err));
