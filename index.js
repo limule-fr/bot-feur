@@ -127,11 +127,11 @@ const REGLES = [
         match: (t) => /\b67\b/.test(t) || /\bsix\s*seven\b/i.test(t) || /\b6\s*7\b/.test(t),
         responses: ["pas de ça ici", "pourquoi faire ?", "bro tu es genant", "je t'en supplie, non"]
     },
-    { type: "pourquoi", match: (t) => /\bpourquoi\b/i.test(t), responses: ["Parce que Feur", "car c'est comme ça", "bah jsp"] },
+    { type: "pourquoi", match: (t) => /\bpourquoi\b/i.test(t), responses: ["Parce que Feur", "car c'est comme ça", "bah jsp","pcq vas te faire foutre"] },
     {
         type: "feur",
         match: (t) => /\b(quoi+|koi+|kwa+|qoi+|quoa+|qwa+)\b/i.test(t),
-        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com/gifs/feur-theobabac"]
+        responses: ["Feur", "FEUR 😂", "Feuuur", "feur 😏", "feur sale kk", "koubhé", "quoikoufeur", "j en ai marre de toi je répond pas", "https://klipy.com"]
     }
 ];
 
@@ -154,6 +154,11 @@ client.once(Events.ClientReady, async () => {
 client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
     const texte = message.content.toLowerCase().trim();
+
+    // 🌐 NOUVELLE COMMANDE !site
+    if (texte === "!site") {
+        return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://onrender.com");
+    }
 
     if (texte === "!stats") {
         const stats = await getStats(); // Lecture asynchrone
@@ -222,8 +227,7 @@ client.on(Events.InteractionCreate, async interaction => {
             run("node deploy.js");
             await interaction.followUp({ content: "✅ Push terminé. Redémarrage..." });
             setTimeout(() => process.exit(0), 1500);
-        } catch (e) { console.error(e); }
-    }
+} catch (e) { console.error(e); }
+}
 });
-
 client.login(process.env.TOKEN).catch(err => console.error("❌ Login erreur :", err));
