@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feur-Mania - Statistiques Détaillées</title>
-    <!-- 📊 Importation de Chart.js pour le camembert -->
-    <script src="https://jsdelivr.net"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,7 +14,6 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
         }
         .container {
             background-color: #162447;
@@ -24,43 +21,20 @@
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             width: 100%;
-            max-width: 650px;
+            max-width: 600px;
             text-align: center;
         }
         h1 { color: #e43f5a; margin-bottom: 5px; }
         .subtitle { color: #8a99ad; margin-bottom: 25px; font-size: 0.9em; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
         .counter-box {
             background-color: #1f4068;
             padding: 15px;
             border-radius: 8px;
-            font-size: 1.1em;
+            font-size: 1.2em;
             font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .counter-box span { color: #e43f5a; font-size: 1.3em; margin-top: 5px; }
-        .counter-box.aura span { color: #00d2fc; }
-
-        /* Style du Camembert */
-        .chart-container {
-            background-color: #1f4068;
-            padding: 20px;
-            border-radius: 8px;
             margin-bottom: 25px;
-            display: flex;
-            justify-content: center;
-            max-height: 280px;
         }
-
+        .counter-box span { color: #e43f5a; }
         .ranking-list { list-style: none; padding: 0; margin: 0; text-align: left; }
         .ranking-item {
             display: flex;
@@ -83,6 +57,7 @@
         .username { font-weight: bold; font-size: 1.1em; }
         .total-count { background-color: #e43f5a; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
         
+        /* Badges de détails */
         .details-box {
             display: flex;
             gap: 8px;
@@ -108,22 +83,8 @@
     <h1>📊 FEUR-MANIA</h1>
     <div class="subtitle">Le classement public et détaillé du serveur</div>
 
-    <!-- Grille des compteurs globaux -->
-    <div class="stats-grid">
-        <div class="counter-box">
-            🎯 Infractions globales
-            <span id="total-crimes">0</span>
-        </div>
-        <div class="counter-box aura">
-            👑 Aura Farmeur (+𝟡𝟡𝟡 aura)
-            <span id="aura-user">Personne...</span>
-        </div>
-    </div>
-
-    <!-- Zone du graphique -->
-    <h2>📊 Répartition des fautes</h2>
-    <div class="chart-container">
-        <canvas id="feurChart"></canvas>
+    <div class="counter-box">
+        Total d'infractions enregistrées : <span id="total-crimes">0</span> 🎯
     </div>
 
     <h2>🏆 Tableau des scores détaillé</h2>
@@ -133,7 +94,7 @@
 
 <script>
     const API_URL = '/api/stats';
-    let feurChartInstance = null; // Stocke le graphique pour pouvoir le mettre à jour
+
 
     async function fetchStats() {
         try {
@@ -146,34 +107,11 @@
             list.innerHTML = '';
 
             const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-            let VraiTotalGlobal = 0;
-
-            // Variables pour accumuler les totaux de chaque catégorie pour le camembert
-            let totalFeur = 0;
-            let totalPourquoi = 0;
-            let totalSexuel = 0;
-            let totalRaciste = 0;
-            let totalAutre = 0;
-
-            // Détermination de l'Aura Farmeur (le joueur traqué qui a le MOINS de fautes)
-            let auraUser = "Personne...";
-            if (data.ranking && data.ranking.length > 0) {
-                // Comme data.ranking est déjà trié du PLUS de fautes au MOINS de fautes,
-                // le dernier élément du tableau est logiquement celui qui en a le moins !
-                const lastUser = data.ranking[data.ranking.length - 1];
-                auraUser = `${lastUser.username} (${lastUser.count} 🔥)`;
-            }
-            document.getElementById('aura-user').innerText = auraUser;
+            let VraiTotalGlobal = 0; // 🛠️ Variable pour recalculer proprement le total sans bug
 
             data.ranking.forEach((user, index) => {
+                // On additionne les fautes de chaque utilisateur au compteur global
                 VraiTotalGlobal += (user.count || 0);
-
-                // On additionne pour le camembert
-                totalFeur += (user.feur || 0);
-                totalPourquoi += (user.pourquoi || 0);
-                totalSexuel += (user.sexuel || 0);
-                totalRaciste += (user.raciste || 0);
-                totalAutre += (user.autre || 0);
 
                 const medal = medals[index] || "👤";
                 const li = document.createElement('li');
@@ -198,35 +136,8 @@
                 list.appendChild(li);
             });
 
+            // 🛠️ On applique le vrai calcul mathématique au compteur en haut
             document.getElementById('total-crimes').innerText = VraiTotalGlobal;
-
-            // 📊 Génération ou mise à jour du graphique Chart.js
-            const ctx = document.getElementById('feurChart').getContext('2d');
-            
-            if (feurChartInstance) {
-                feurChartInstance.destroy(); // On détruit l'ancien graphique avant de recréer
-            }
-
-            feurChartInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Quoi/Feur', 'Pourquoi', 'Sexuel', 'Raciste', 'Autre'],
-                    datasets: [{
-                        data: [totalFeur, totalPourquoi, totalSexuel, totalRaciste, totalAutre],
-                        backgroundColor: ['#4ecc71', '#3498db', '#f1c40f', '#e74c3c', '#9b59b6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#ffffff' }
-                        }
-                    }
-                }
-            });
 
         } catch (error) {
             console.error('Erreur:', error);
