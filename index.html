@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feur-Mania - Statistiques</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #162447;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 { color: #e43f5a; margin-bottom: 5px; }
+        .subtitle { color: #8a99ad; margin-bottom: 25px; font-size: 0.9em; }
+        .counter-box {
+            background-color: #1f4068;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        .counter-box span { color: #e43f5a; }
+        .ranking-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1f4068;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            transition: transform 0.2s;
+        }
+        .ranking-item:hover { transform: scale(1.02); }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .rank { font-weight: bold; width: 25px; }
+        .username { font-weight: 500; }
+        .count { background-color: #e43f5a; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+        .loading { color: #8a99ad; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 FEUR-MANIA</h1>
+    <div class="subtitle">Le classement officiel des victimes du serveur</div>
+
+    <div class="counter-box">
+        Total de pièges déclenchés : <span id="total-crimes">0</span> 🎯
+    </div>
+
+    <h2>🏆 Tableau des scores</h2>
+    <div id="loading" class="loading">Chargement des victimes...</div>
+    <ul class="ranking-list" id="ranking-list"></ul>
+</div>
+
+<script>
+    // Comme le HTML et l'API tournent sur le même serveur, on utilise l'URL relative
+    const API_URL = '/api/stats';
+
+    async function fetchStats() {
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('total-crimes').innerText = data.total;
+
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '';
+
+            const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+            data.ranking.forEach((user, index) => {
+                const medal = medals[index] || "👤";
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+                li.innerHTML = `
+                    <div class="user-info">
+                        <span class="rank">${medal}</span>
+                        <span class="username">${user.username}</span>
+                    </div>
+                    <span class="count">${user.count} feur</span>
+                `;
+                list.appendChild(li);
+            });
+        } catch (error) {
+            console.error('Erreur:', error);
+            document.getElementById('loading').innerText = "Impossible de charger les statistiques.";
+        }
+    }
+
+    // Charger les stats au démarrage
+    fetchStats();
+</script>
+</body>
+</html>

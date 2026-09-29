@@ -1,6 +1,8 @@
 require("dotenv").config();
 console.log("Début chargement index.js");
 const http = require('http');
+const fs = require('fs'); // 📊 Gestion des fichiers pour les stats
+const path = require('path');
 const {
     Client,
     GatewayIntentBits,
@@ -11,12 +13,68 @@ const {
 } = require('discord.js');
 const { execSync } = require('child_process');
 
+// 📊 Fichier de stockage des statistiques
+const STATS_FILE = path.join(__dirname, 'stats.json');
+
+// 📊 Fonctions pour lire et écrire les statistiques
+function getStats() {
+    if (!fs.existsSync(STATS_FILE)) {
+        fs.writeFileSync(STATS_FILE, JSON.stringify({ total: 0, users: {} }, null, 4));
+    }
+    try {
+        return JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+    } catch (e) {
+        return { total: 0, users: {} };
+    }
+}
+
+function saveStats(stats) {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 4));
+}
+
+// 🌐 Serveur HTTP mis à jour pour servir l'API du site web
+// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API
 http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end('Bot online');
+    // Gestion de la route de l'API JSON
+    if (req.url === '/api/stats' && req.method === 'GET') {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        
+        const stats = getStats();
+        const topUsers = Object.entries(stats.users)
+            .map(([id, data]) => ({ id, username: data.username, count: data.count }))
+            .sort((a, b) => b.count - a.count);
+
+        return res.end(JSON.stringify({
+            total: stats.total,
+            ranking: topUsers
+        }));
+    } 
+    
+    // Si l'utilisateur va sur la page d'accueil, on lui envoie le fichier index.html
+    else if (req.url === '/' && req.method === 'GET') {
+        const htmlPath = path.join(__dirname, 'index.html');
+        fs.readFile(htmlPath, 'utf8', (err, htmlContent) => {
+            if (err) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                return res.end('Erreur lors du chargement de la page web.');
+            }
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            return res.end(htmlContent);
+        });
+    } 
+    
+    // Toutes les autres adresses inconnues
+    else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Page non trouvée');
+    }
 }).listen(process.env.PORT || 3000, () => {
     console.log(`Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`);
 });
+
 
 const client = new Client({
     intents: [
@@ -50,7 +108,7 @@ const REGEX_MOTS_RACISTES = new RegExp(
     "i"
 );
 
-// 💡 Centralisation de toutes les règles de détection textuelle
+// 💡 Centralisation de toutes les règles de détection textuelle (AÉRÉE)
 const REGLES = [
     {
         match: (t) => REGEX_MOTS_RACISTES.test(t),
@@ -83,7 +141,9 @@ const REGLES = [
     {
         match: (t) => /\bpourquoi\b/i.test(t),
         responses: [
-            "Parce que Feur"
+            "Parce que Feur",
+            "car c'est comme ça", // 🆕 Facile à ajouter maintenant !
+            "bah jsp"            // 🆕
         ]
     },
     {
@@ -97,7 +157,7 @@ const REGLES = [
             "koubhé",
             "quoikoufeur",
             "j en ai marre de toi je répond pas",
-            "https://klipy.com/gifs/feur-theobabac"
+            "https://klipy.com"
         ]
     }
 ];
@@ -153,6 +213,40 @@ client.on("messageCreate", async (message) => {
 
     const texte = message.content.toLowerCase().trim();
 
+    // 📊 COMMANDE !stats locale (affiche le top 5 sur Discord)
+    if (texte === "!stats") {
+        const stats = getStats();
+        const topUsers = Object.entries(stats.users)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+        let affichageTop = "";
+        const medailles = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+        if (topUsers.length === 0) {
+            affichageTop = "Personne ne s'est encore fait avoir... Pour l'instant. 👀";
+        } else {
+            topUsers.forEach(([id, data], index) => {
+                affichageTop += `${medailles[index]} **${data.username}** : ${data.count} fois\n`;
+            });
+        }
+
+        const messageStats = 
+`📊 **TABLEAU DE BORD DE LA FEUR-MANIA**
+
+Pris qui croyait prendre... Voici l'état du serveur face au bot !
+
+🏆 **LE TOP DES VICTIMES :**
+${affichageTop}
+📈 **STATISTIQUES GLOBALES :**
+* 🎯 **Total de pièges déclenchés :** ${stats.total}
+
+---
+*Astuce : Réfléchissez à deux fois avant de poser des questions...*`;
+
+        return safeReply(message, messageStats);
+    }
+
     // Mentions / Pings
     if (message.mentions.has(client.user.id) && !message.mentions.everyone) {
         const reponsesPing = [
@@ -162,7 +256,7 @@ client.on("messageCreate", async (message) => {
             "Laisse-moi tranquille, je regarde vos messages. 🤫",
             "Oui, maître ?",
             "tg tu es chiant",
-            "suce mes bits", //je la trouve incroyable cette vanne perso
+            "suce mes bits",
             "montre moi ta grosse clé usb !" 
         ];
         return safeReply(message, pick(reponsesPing));
@@ -175,7 +269,7 @@ client.on("messageCreate", async (message) => {
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("deploy_git")
-                .setLabel("🚀 Push GitHub") //voir deploy.js
+                .setLabel("🚀 Push GitHub")
                 .setStyle(ButtonStyle.Success)
         );
 
@@ -188,6 +282,19 @@ client.on("messageCreate", async (message) => {
     // Boucle unique de traitement de toutes les règles (modération + blagues)
     for (const rule of REGLES) {
         if (rule.match(texte)) {
+            // 📊 ENREGISTREMENT DE LA STATISTIQUE
+            const stats = getStats();
+            const userId = message.author.id;
+
+            stats.total += 1;
+            if (!stats.users[userId]) {
+                stats.users[userId] = { username: message.author.username, count: 0 };
+            }
+            stats.users[userId].count += 1;
+            stats.users[userId].username = message.author.username;
+
+            saveStats(stats);
+
             return safeReply(message, pick(rule.responses));
         }
     }
@@ -242,4 +349,3 @@ client.login(process.env.TOKEN)
 setTimeout(() => {
     console.log("⏱️ 30 secondes après login, toujours vivant");
 }, 30000);
-
