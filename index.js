@@ -32,8 +32,7 @@ function saveStats(stats) {
     fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 4));
 }
 
-// 🌐 Serveur HTTP mis à jour pour servir l'API du site web
-// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API
+// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API avec détails
 http.createServer((req, res) => {
     // Gestion de la route de l'API JSON
     if (req.url === '/api/stats' && req.method === 'GET') {
@@ -44,7 +43,16 @@ http.createServer((req, res) => {
         
         const stats = getStats();
         const topUsers = Object.entries(stats.users)
-            .map(([id, data]) => ({ id, username: data.username, count: data.count }))
+            .map(([id, data]) => ({ 
+                id, 
+                username: data.username, 
+                count: data.count || 0,
+                feur: data.feur || 0,
+                pourquoi: data.pourquoi || 0,
+                sexuel: data.sexuel || 0,
+                raciste: data.raciste || 0,
+                autre: data.autre || 0
+            }))
             .sort((a, b) => b.count - a.count);
 
         return res.end(JSON.stringify({
@@ -108,15 +116,17 @@ const REGEX_MOTS_RACISTES = new RegExp(
     "i"
 );
 
-// 💡 Centralisation de toutes les règles de détection textuelle (AÉRÉE)
+// 💡 Centralisation des règles avec catégories d'infractions uniques
 const REGLES = [
     {
+        type: "raciste",
         match: (t) => REGEX_MOTS_RACISTES.test(t),
         responses: [
             "SALE RACISTE !"
         ]
     },
     {
+        type: "sexuel",
         match: (t) => REGEX_MOTS_SEXUELS.test(t),
         responses: [
             "gros cochon 🐷",
@@ -127,6 +137,7 @@ const REGLES = [
         ]
     },
     {
+        type: "autre",
         match: (t) =>
             /\b67\b/.test(t) ||
             /\bsix\s*seven\b/i.test(t) ||
@@ -139,14 +150,16 @@ const REGLES = [
         ]
     },
     {
+        type: "pourquoi",
         match: (t) => /\bpourquoi\b/i.test(t),
         responses: [
             "Parce que Feur",
-            "car c'est comme ça", // 🆕 Facile à ajouter maintenant !
-            "bah jsp"            // 🆕
+            "car c'est comme ça",
+            "bah jsp"
         ]
     },
     {
+        type: "feur",
         match: (t) => /\b(quoi+|koi+|kwa+|qoi+|quoa+|qwa+)\b/i.test(t),
         responses: [ 
             "Feur",
@@ -213,11 +226,11 @@ client.on("messageCreate", async (message) => {
 
     const texte = message.content.toLowerCase().trim();
 
-    // 📊 COMMANDE !stats locale (affiche le top 5 sur Discord)
+    // 📊 COMMANDE !stats locale mise à jour pour Discord
     if (texte === "!stats") {
         const stats = getStats();
         const topUsers = Object.entries(stats.users)
-            .sort((a, b) => b.count - a.count)
+            .sort((a, b) => (b.count || 0) - (a.count || 0) )
             .slice(0, 5);
 
         let affichageTop = "";
@@ -227,22 +240,17 @@ client.on("messageCreate", async (message) => {
             affichageTop = "Personne ne s'est encore fait avoir... Pour l'instant. 👀";
         } else {
             topUsers.forEach(([id, data], index) => {
-                affichageTop += `${medailles[index]} **${data.username}** : ${data.count} fois\n`;
+                affichageTop += `${medailles[index]} **${data.username}** : ${data.count || 0} fautes (Feur: ${data.feur || 0}, Pourquoi: ${data.pourquoi || 0}, Sexuel: ${data.sexuel || 0}, Raciste: ${data.raciste || 0})\n`;
             });
         }
 
         const messageStats = 
 `📊 **TABLEAU DE BORD DE LA FEUR-MANIA**
 
-Pris qui croyait prendre... Voici l'état du serveur face au bot !
-
 🏆 **LE TOP DES VICTIMES :**
 ${affichageTop}
 📈 **STATISTIQUES GLOBALES :**
-* 🎯 **Total de pièges déclenchés :** ${stats.total}
-
----
-*Astuce : Réfléchissez à deux fois avant de poser des questions...*`;
+* 🎯 **Total de pièges déclenchés :** ${stats.total}`;
 
         return safeReply(message, messageStats);
     }
@@ -282,70 +290,82 @@ ${affichageTop}
     // Boucle unique de traitement de toutes les règles (modération + blagues)
     for (const rule of REGLES) {
         if (rule.match(texte)) {
-            // 📊 ENREGISTREMENT DE LA STATISTIQUE
+            // 📊 ENREGISTREMENT DE LA STATISTIQUE AVEC SÉCURITÉ INFRASTRUCTURE
             const stats = getStats();
             const userId = message.author.id;
 
             stats.total += 1;
             if (!stats.users[userId]) {
-                stats.users[userId] = { username: message.author.username, count: 0 };
+                stats.users[userId] = { 
+                    username: message.author.username, 
+                    count: 0,
+                    feur: 0,
+                    pourquoi: 0,
+                    sexuel: 0,
+                    raciste: 0,
+                    autre: 0
+                };
             }
+            
+            // Sécurité : initialise le compteur à 0 s'il n'existe pas (évite le bug NaN)
+            if (stats.users[userId].count === undefined) stats.users[userId].count = 0;
+            if (stats.users[userId].feur === undefined) stats.users[userId].feur = 0;
+            if (stats.users[userId].pourquoi === undefined) stats.users[userId].pourquoi = 0;
+            if (stats.users[userId].sexuel === undefined) stats.users[userId].sexuel = 0;
+            if (stats.users[userId].raciste === undefined) stats.users[userId].raciste = 0;
+            if (stats.users[userId].autre === undefined) stats.users[userId].autre = 0;
+
+            // Incrémentations dynamiques sans risque de plantage
             stats.users[userId].count += 1;
-            stats.users[userId].username = message.author.username;
-
-            saveStats(stats);
-
-            return safeReply(message, pick(rule.responses));
-        }
-    }
+            if (rule.type && stats.users[userId][rule.type] !== undefined) {
+stats.users[userId][rule.type] += 1;
+} else {
+stats.users[userId].autre += 1;
+}
+stats.users[userId].username = message.author.username;
+saveStats(stats);
+return safeReply(message, pick(rule.responses));
+}
+}
 });
-
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isButton()) return;
-    if (interaction.user.id !== OWNER_ID) return;
-
-    if (interaction.customId === "deploy_git") {
-        try {
-            await interaction.reply({
-                content: "Déploiement en cours...",
-                ephemeral: true
-            });
-
-            run("node deploy.js");
-
-            await interaction.followUp({
-                content: "✅ Push terminé. Redémarrage..."
-            });
-
-            setTimeout(() => process.exit(0), 1500);
-        } catch (e) {
-            console.error(e);
-            try {
-                await interaction.followUp({
-                    content: "❌ Erreur Git ou deploy.js"
-                });
-            } catch {}
-        }
-    }
+if (!interaction.isButton()) return;
+if (interaction.user.id !== OWNER_ID) return;
+if (interaction.customId === "deploy_git") {
+try {
+await interaction.reply({
+content: "Déploiement en cours...",
+ephemeral: true
 });
-
+run("node deploy.js");
+await interaction.followUp({
+content: "✅ Push terminé. Redémarrage..."
+});
+setTimeout(() => process.exit(0), 1500);
+} catch (e) {
+console.error(e);
+try {
+await interaction.followUp({
+content: "❌ Erreur Git ou deploy.js"
+});
+} catch {}
+}
+}
+});
 console.log("Version Node :", process.version);
 console.log("Version discord.js :", require("discord.js").version);
 console.log("TOKEN présent :", !!process.env.TOKEN);
 console.log("PORT :", process.env.PORT);
-
 console.log("Avant login - toutes les déclarations chargées");
 console.log("Tentative de connexion Discord...");
 console.log("Début login...");
-
 client.login(process.env.TOKEN)
-    .then(token => {
-        console.log("✅ Login réussi, token reçu");
-    })
-    .catch(err => {
-        console.error("❌ Login erreur :", err);
-    });
-
+.then(token => {
+console.log("✅ Login réussi, token reçu");
+})
+.catch(err => {
+console.error("❌ Login erreur :", err);
+});
 setTimeout(() => {
-    console.log("⏱️ 30 secondes après login, toujours vivant");
+console.log("⏱️ 30 secondes après login, toujours vivant");
 }, 30000);
