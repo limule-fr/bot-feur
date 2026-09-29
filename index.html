@@ -93,7 +93,6 @@
 </div>
 
 <script>
-    // Le script interroge directement la route API de ton bot Discord
     const API_URL = '/api/stats';
 
     async function fetchStats() {
@@ -102,14 +101,17 @@
             const data = await response.json();
 
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('total-crimes').innerText = data.total;
 
             const list = document.getElementById('ranking-list');
             list.innerHTML = '';
 
             const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+            let VraiTotalGlobal = 0; // 🛠️ Variable pour recalculer proprement le total sans bug
 
             data.ranking.forEach((user, index) => {
+                // On additionne les fautes de chaque utilisateur au compteur global
+                VraiTotalGlobal += (user.count || 0);
+
                 const medal = medals[index] || "👤";
                 const li = document.createElement('li');
                 li.className = 'ranking-item';
@@ -132,6 +134,10 @@
                 `;
                 list.appendChild(li);
             });
+
+            // 🛠️ On applique le vrai calcul mathématique au compteur en haut
+            document.getElementById('total-crimes').innerText = VraiTotalGlobal;
+
         } catch (error) {
             console.error('Erreur:', error);
             document.getElementById('loading').innerText = "Impossible de charger les statistiques.";
