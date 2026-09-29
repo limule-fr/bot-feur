@@ -49,13 +49,13 @@ async function saveStats(stats) {
     fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 4));
 }
 
-// 🌐 Serveur HTTP avec détection d'URL nettoyée et robuste (Unique et Nettoyé)
+// 🌐 Serveur HTTP corrigé, ultra-simple et robuste
 http.createServer(async (req, res) => {
-    // On nettoie l'URL pour supprimer les espaces ou slashs superflus à la fin
-    const cleanUrl = req.url.split('?')[0].replace(/\/\$/, '');
+    // On extrait l'adresse brute avant les paramètres "?"
+    const rawUrl = req.url.split('?')[0];
 
-    // 📊 Route de l'API JSON (Détection robuste)
-    if (cleanUrl === '/api/stats') {
+    // 📊 Route de l'API JSON (Détection parfaite)
+    if (rawUrl === '/api/stats' || rawUrl === '/api/stats/') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -99,7 +99,7 @@ http.createServer(async (req, res) => {
     } 
     
     // 🏠 Page d'accueil index.html (Pour l'URL racine '/' ou vide)
-    else if (cleanUrl === '' || cleanUrl === '/') {
+    else if (rawUrl === '' || rawUrl === '/') {
         const htmlPath = path.join(__dirname, 'index.html');
         fs.readFile(htmlPath, 'utf8', (err, htmlContent) => {
             if (err) {
@@ -119,6 +119,7 @@ http.createServer(async (req, res) => {
 }).listen(process.env.PORT || 3000, () => {
     console.log(`Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`);
 });
+
 
 const client = new Client({
     intents: [
