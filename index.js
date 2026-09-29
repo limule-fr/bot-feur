@@ -159,6 +159,56 @@ client.on("messageCreate", async (message) => {
     if (texte === "!site") {
         return safeReply(message, "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com");
     }
+        // 😈 COMMANDE SECRÈTE DE TRICHE (Réservée à l'owner du bot)
+    if (texte === "!injectertriche") {
+        if (message.author.id !== OWNER_ID) return;
+
+        const statsTrichees = {
+            total: 0,
+            users: {
+                "123456789012345678": {
+                    username: "limule_26543",
+                    count: 50,
+                    feur: 42,
+                    pourquoi: 5,
+                    sexuel: 3,
+                    raciste: 0,
+                    autre: 0
+                },
+                "987654321098765432": {
+                    username: "noctalune44",
+                    count: 1,
+                    feur: 1,
+                    pourquoi: 0,
+                    sexuel: 0,
+                    raciste: 0,
+                    autre: 0
+                },
+                "111222333444555666": {
+                    username: "Un_Ami_Trop_Bavard",
+                    count: 850,
+                    feur: 800,
+                    pourquoi: 40,
+                    sexuel: 10,
+                    raciste: 0,
+                    autre: 0
+                }
+            }
+        };
+
+        // Recalcul automatique du total général par sécurité
+        let totalGlobal = 0;
+        Object.values(statsTrichees.users).forEach(u => {
+            totalGlobal += (u.count || 0);
+        });
+        statsTrichees.total = totalGlobal;
+
+        // Injection dans Redis en ligne
+        await saveStats(statsTrichees);
+
+        return safeReply(message, `🚀 **Triche injectée avec succès depuis Render !** Total global : ${totalGlobal} fautes. Tu peux aller voir le site.`);
+    }
+
 
     if (texte === "!stats") {
         const stats = await getStats(); // Lecture asynchrone
