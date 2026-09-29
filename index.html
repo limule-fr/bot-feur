@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feur-Mania - Statistiques</title>
+    <title>Feur-Mania - Statistiques Détaillées</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -21,7 +21,7 @@
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             text-align: center;
         }
         h1 { color: #e43f5a; margin-bottom: 5px; }
@@ -38,19 +38,42 @@
         .ranking-list { list-style: none; padding: 0; margin: 0; text-align: left; }
         .ranking-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
             background-color: #1f4068;
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
             transition: transform 0.2s;
         }
-        .ranking-item:hover { transform: scale(1.02); }
+        .ranking-item:hover { transform: scale(1.01); }
+        .main-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .rank { font-weight: bold; width: 25px; }
-        .username { font-weight: 500; }
-        .count { background-color: #e43f5a; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+        .username { font-weight: bold; font-size: 1.1em; }
+        .total-count { background-color: #e43f5a; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; }
+        
+        /* Badges de détails */
+        .details-box {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 0.75em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .badge-feur { background-color: #4ecc71; color: #fff; }
+        .badge-pourquoi { background-color: #3498db; color: #fff; }
+        .badge-sexuel { background-color: #f1c40f; color: #000; }
+        .badge-raciste { background-color: #e74c3c; color: #fff; }
+        .badge-autre { background-color: #9b59b6; color: #fff; }
         .loading { color: #8a99ad; font-style: italic; }
     </style>
 </head>
@@ -58,19 +81,19 @@
 
 <div class="container">
     <h1>📊 FEUR-MANIA</h1>
-    <div class="subtitle">Le classement officiel des victimes du serveur</div>
+    <div class="subtitle">Le classement public et détaillé du serveur</div>
 
     <div class="counter-box">
-        Total de pièges déclenchés : <span id="total-crimes">0</span> 🎯
+        Total d'infractions enregistrées : <span id="total-crimes">0</span> 🎯
     </div>
 
-    <h2>🏆 Tableau des scores</h2>
-    <div id="loading" class="loading">Chargement des victimes...</div>
+    <h2>🏆 Tableau des scores détaillé</h2>
+    <div id="loading" class="loading">Chargement des statistiques...</div>
     <ul class="ranking-list" id="ranking-list"></ul>
 </div>
 
 <script>
-    // Comme le HTML et l'API tournent sur le même serveur, on utilise l'URL relative
+    // Le script interroge directement la route API de ton bot Discord
     const API_URL = '/api/stats';
 
     async function fetchStats() {
@@ -90,12 +113,22 @@
                 const medal = medals[index] || "👤";
                 const li = document.createElement('li');
                 li.className = 'ranking-item';
+                
                 li.innerHTML = `
-                    <div class="user-info">
-                        <span class="rank">${medal}</span>
-                        <span class="username">${user.username}</span>
+                    <div class="main-info">
+                        <div class="user-info">
+                            <span class="rank">${medal}</span>
+                            <span class="username">${user.username}</span>
+                        </div>
+                        <span class="total-count">${user.count} fautes</span>
                     </div>
-                    <span class="count">${user.count} feur</span>
+                    <div class="details-box">
+                        <span class="badge badge-feur">🗣️ Quoi/Feur : ${user.feur}</span>
+                        <span class="badge badge-pourquoi">❓ Pourquoi : ${user.pourquoi}</span>
+                        <span class="badge badge-sexuel">🐷 Sexuel : ${user.sexuel}</span>
+                        <span class="badge badge-raciste">🚨 Raciste : ${user.raciste}</span>
+                        <span class="badge badge-autre">⚙️ Autre : ${user.autre}</span>
+                    </div>
                 `;
                 list.appendChild(li);
             });
@@ -105,7 +138,6 @@
         }
     }
 
-    // Charger les stats au démarrage
     fetchStats();
 </script>
 </body>
