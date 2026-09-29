@@ -1,8 +1,17 @@
 {
-    "total": 1,
+    "total": 4,
     "users": {
         "1483115316144771082": {
             "username": "limule_26543",
+            "count": 4,
+            "feur": 3,
+            "pourquoi": 0,
+            "sexuel": 1,
+            "raciste": 0,
+            "autre": 0
+        },
+        "1495156972582998086": {
+            "username": "noctalune44",
             "count": 1,
             "feur": 1,
             "pourquoi": 0,
