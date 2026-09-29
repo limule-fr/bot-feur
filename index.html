@@ -215,8 +215,9 @@
                     }]
                 },
                 options: {
-                    responsive: false, // 🛠️ Bloque la taille du canvas à 300x300px stricte
+                    responsive: false,
                     maintainAspectRatio: true,
+                    animation: false, // 🛠️ OPTIMISATION X200 : Désactive les animations CPU-vores
                     plugins: {
                         legend: {
                             position: 'right',
