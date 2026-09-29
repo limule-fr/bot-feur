@@ -50,31 +50,45 @@ async function saveStats(stats) {
 }
 
 // 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API de manière asynchrone
+// 🌐 Serveur HTTP mis à jour pour servir le site web ET l'API de manière asynchrone (Sécurisé)
 http.createServer(async (req, res) => {
     if (req.url === '/api/stats' && req.method === 'GET') {
+        // En-têtes CORS complets pour autoriser l'accès depuis n'importe quel navigateur sans blocage
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         res.setHeader('Content-Type', 'application/json');
-        res.writeHead(200);
         
-        const stats = await getStats(); // Lecture asynchrone
-        const topUsers = Object.entries(stats.users)
-            .map(([id, data]) => ({ 
-                id, 
-                username: data.username, 
-                count: data.count || 0,
-                feur: data.feur || 0,
-                pourquoi: data.pourquoi || 0,
-                sexuel: data.sexuel || 0,
-                raciste: data.raciste || 0,
-                autre: data.autre || 0
-            }))
-            .sort((a, b) => b.count - a.count);
+        try {
+            const stats = await getStats(); // Lecture asynchrone de la base de données
+            const topUsers = Object.entries(stats.users)
+                .map(([id, data]) => ({ 
+                    id, 
+                    username: data.username, 
+                    count: data.count || 0,
+                    feur: data.feur || 0,
+                    pourquoi: data.pourquoi || 0,
+                    sexuel: data.sexuel || 0,
+                    raciste: data.raciste || 0,
+                    autre: data.autre || 0
+                }))
+                .sort((a, b) => b.count - a.count);
 
-        return res.end(JSON.stringify({
-            total: stats.total,
-            ranking: topUsers
-        }));
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                total: stats.total,
+                ranking: topUsers
+            }));
+        } catch (error) {
+            console.error("Erreur API Stats:", error);
+            res.writeHead(500);
+            return res.end(JSON.stringify({ 
+                total: 0, 
+                ranking: [], 
+                error: "Erreur lors de la récupération des données",
+                details: error.message 
+            }));
+        }
     } 
     else if (req.url === '/' && req.method === 'GET') {
         const htmlPath = path.join(__dirname, 'index.html');
@@ -102,6 +116,8 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
+console.log("Client créé");
+
 console.log("Client créé");
 
 const OWNER_ID = process.env.OWNER_ID;
