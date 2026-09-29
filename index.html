@@ -50,7 +50,7 @@
         .counter-box span { color: #e43f5a; font-size: 1.3em; margin-top: 5px; }
         .counter-box.aura span { color: #00d2fc; }
 
-        /* Style du Camembert */
+        /* Style du conteneur du Camembert */
         .chart-container {
             background-color: #1f4068;
             padding: 20px;
@@ -58,7 +58,8 @@
             margin-bottom: 25px;
             display: flex;
             justify-content: center;
-            max-height: 280px;
+            align-items: center;
+            min-height: 340px;
         }
 
         .ranking-list { list-style: none; padding: 0; margin: 0; text-align: left; }
@@ -115,15 +116,15 @@
             <span id="total-crimes">0</span>
         </div>
         <div class="counter-box aura">
-            👑 Aura Farmeur (+𝟡𝟡𝟡 aura)
+            👑 Aura Farmeur (+999 aura)
             <span id="aura-user">Personne...</span>
         </div>
     </div>
 
-    <!-- Zone du graphique -->
+    <!-- Zone du graphique (Taille bloquée par sécurité) -->
     <h2>📊 Répartition des fautes</h2>
     <div class="chart-container">
-        <canvas id="feurChart"></canvas>
+        <canvas id="feurChart" width="300" height="300"></canvas>
     </div>
 
     <h2>🏆 Tableau des scores détaillé</h2>
@@ -133,7 +134,7 @@
 
 <script>
     const API_URL = '/api/stats';
-    let feurChartInstance = null; // Stocke le graphique pour pouvoir le mettre à jour
+    let feurChartInstance = null;
 
     async function fetchStats() {
         try {
@@ -148,18 +149,15 @@
             const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
             let VraiTotalGlobal = 0;
 
-            // Variables pour accumuler les totaux de chaque catégorie pour le camembert
             let totalFeur = 0;
             let totalPourquoi = 0;
             let totalSexuel = 0;
             let totalRaciste = 0;
             let totalAutre = 0;
 
-            // Détermination de l'Aura Farmeur (le joueur traqué qui a le MOINS de fautes)
+            // 👑 Détermination de l'Aura Farmeur
             let auraUser = "Personne...";
             if (data.ranking && data.ranking.length > 0) {
-                // Comme data.ranking est déjà trié du PLUS de fautes au MOINS de fautes,
-                // le dernier élément du tableau est logiquement celui qui en a le moins !
                 const lastUser = data.ranking[data.ranking.length - 1];
                 auraUser = `${lastUser.username} (${lastUser.count} 🔥)`;
             }
@@ -168,7 +166,6 @@
             data.ranking.forEach((user, index) => {
                 VraiTotalGlobal += (user.count || 0);
 
-                // On additionne pour le camembert
                 totalFeur += (user.feur || 0);
                 totalPourquoi += (user.pourquoi || 0);
                 totalSexuel += (user.sexuel || 0);
@@ -204,7 +201,7 @@
             const ctx = document.getElementById('feurChart').getContext('2d');
             
             if (feurChartInstance) {
-                feurChartInstance.destroy(); // On détruit l'ancien graphique avant de recréer
+                feurChartInstance.destroy();
             }
 
             feurChartInstance = new Chart(ctx, {
@@ -218,7 +215,8 @@
                     }]
                 },
                 options: {
-                    responsive: true,
+                    responsive: false, // 🛠️ Bloque la taille du canvas à 300x300px stricte
+                    maintainAspectRatio: true,
                     plugins: {
                         legend: {
                             position: 'right',
