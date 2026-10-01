@@ -480,7 +480,7 @@ const REGLES = [
         type: "pourquoi",
 
         match: (t) =>
-            /\bpourquoi\b/i.test(t),
+            /\b(pourquoi+|pk+|pqwa+)\b/i.test(t),
 
         responses: [
             "Parce que Feur",
