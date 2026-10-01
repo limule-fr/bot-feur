@@ -26,9 +26,9 @@ const redis = process.env.REDIS_URL
 // 🎛️ IDS DES RÔLES DISCORD
 // =====================================================
 
-const ROLE_VICTIME_ULTIME_ID = "TON_ID_DE_ROLE_VICTIME_ULTIME";
-const ROLE_GROS_COCHON_ID = "TON_ID_DE_ROLE_GROS_COCHON";
-const ROLE_BOULET_IRRECUPERABLE_ID = "TON_ID_DE_ROLE_BOULET_IRRECUPERABLE";
+const ROLE_VICTIME_ULTIME_NAME = "Victime Ultime";
+const ROLE_GROS_COCHON_NAME = "Gros Cochon";
+const ROLE_BOULET_IRRECUPERABLE_NAME = "Boulet Irrécupérable";
 
 // =====================================================
 // 📊 GESTION DES STATISTIQUES
@@ -112,145 +112,95 @@ async function saveStats(stats) {
 // =====================================================
 
 async function checkAndAssignRoles(guild, stats) {
-    if (!guild) return;
-
     try {
         const topUsers = Object.entries(stats.users)
             .map(([id, data]) => ({
                 id,
-                count: data.count || 0,
-                sexuel: data.sexuel || 0
+                ...data
             }))
             .sort((a, b) => b.count - a.count);
 
-        // Trouve l'utilisateur avec le plus de fautes
-        const pireUserId =
-            topUsers.length > 0 && topUsers[0].count > 0
-                ? topUsers[0].id
-                : null;
+        const pireUserId = topUsers.length > 0 && topUsers[0].count > 0
+            ? topUsers[0].id
+            : null;
+
+        const roleVictimeUltime = guild.roles.cache.find(
+    role => role.name.toLowerCase() === ROLE_VICTIME_ULTIME_NAME.toLowerCase()
+);
+
+const roleGrosCochon = guild.roles.cache.find(
+    role => role.name.toLowerCase() === ROLE_GROS_COCHON_NAME.toLowerCase()
+);
+
+const roleBouletIrrecuperable = guild.roles.cache.find(
+    role => role.name.toLowerCase() === ROLE_BOULET_IRRECUPERABLE_NAME.toLowerCase()
+);
+
+        if (!roleVictimeUltime) {
+            console.log(`Rôle introuvable : ${ROLE_VICTIME_ULTIME_NAME}`);
+        }
+
+        if (!roleGrosCochon) {
+            console.log(`Rôle introuvable : ${ROLE_GROS_COCHON_NAME}`);
+        }
+
+        if (!roleBouletIrrecuperable) {
+            console.log(`Rôle introuvable : ${ROLE_BOULET_IRRECUPERABLE_NAME}`);
+        }
 
         const members = await guild.members.fetch();
 
-        for (const [memberId, member] of members) {
-            const userData = stats.users[memberId] || {};
+        for (const member of members.values()) {
+            if (member.user.bot) continue;
 
-            const totalCount = userData.count || 0;
-            const sexuelCount = userData.sexuel || 0;
+            const userStats = stats.users[member.id] || {
+                count: 0,
+                sexuel: 0
+            };
 
-            // =================================================
-            // 👑 VICTIME ULTIME
-            // =================================================
-
-            if (ROLE_VICTIME_ULTIME_ID) {
-                if (memberId === pireUserId) {
-                    if (
-                        !member.roles.cache.has(
-                            ROLE_VICTIME_ULTIME_ID
-                        )
-                    ) {
-                        await member.roles
-                            .add(ROLE_VICTIME_ULTIME_ID)
-                            .catch(console.error);
-
-                        console.log(
-                            `👑 Rôle Victime Ultime attribué à ${member.user.username}`
-                        );
+            if (roleVictimeUltime) {
+                if (member.id === pireUserId) {
+                    if (!member.roles.cache.has(roleVictimeUltime.id)) {
+                        await member.roles.add(roleVictimeUltime);
+                        console.log(`Victime Ultime attribué à ${member.user.tag}`);
                     }
                 } else {
-                    if (
-                        member.roles.cache.has(
-                            ROLE_VICTIME_ULTIME_ID
-                        )
-                    ) {
-                        await member.roles
-                            .remove(ROLE_VICTIME_ULTIME_ID)
-                            .catch(console.error);
+                    if (member.roles.cache.has(roleVictimeUltime.id)) {
+                        await member.roles.remove(roleVictimeUltime);
                     }
                 }
             }
 
-            // =================================================
-            // 🐷 GROS COCHON
-            // À partir de 5 fautes sexuelles
-            // =================================================
-
-            if (ROLE_GROS_COCHON_ID) {
-                if (sexuelCount >= 5) {
-                    if (
-                        !member.roles.cache.has(
-                            ROLE_GROS_COCHON_ID
-                        )
-                    ) {
-                        await member.roles
-                            .add(ROLE_GROS_COCHON_ID)
-                            .catch(console.error);
-
-                        console.log(
-                            `🐷 Rôle Gros Cochon attribué à ${member.user.username}`
-                        );
+            if (roleGrosCochon) {
+                if (userStats.sexuel >= 5) {
+                    if (!member.roles.cache.has(roleGrosCochon.id)) {
+                        await member.roles.add(roleGrosCochon);
+                        console.log(`Gros Cochon attribué à ${member.user.tag}`);
                     }
                 } else {
-                    if (
-                        member.roles.cache.has(
-                            ROLE_GROS_COCHON_ID
-                        )
-                    ) {
-                        await member.roles
-                            .remove(ROLE_GROS_COCHON_ID)
-                            .catch(console.error);
-
-                        console.log(
-                            `🐷 Rôle Gros Cochon retiré à ${member.user.username}`
-                        );
+                    if (member.roles.cache.has(roleGrosCochon.id)) {
+                        await member.roles.remove(roleGrosCochon);
                     }
                 }
             }
 
-            // =================================================
-            // 💀 BOULET IRRÉCUPÉRABLE
-            // À partir de 101 fautes au total
-            // =================================================
-
-            if (ROLE_BOULET_IRRECUPERABLE_ID) {
-                if (totalCount > 100) {
-                    if (
-                        !member.roles.cache.has(
-                            ROLE_BOULET_IRRECUPERABLE_ID
-                        )
-                    ) {
-                        await member.roles
-                            .add(ROLE_BOULET_IRRECUPERABLE_ID)
-                            .catch(console.error);
-
-                        console.log(
-                            `💀 Rôle Boulet Irrécupérable attribué à ${member.user.username}`
-                        );
+            if (roleBouletIrrecuperable) {
+                if (userStats.count > 100) {
+                    if (!member.roles.cache.has(roleBouletIrrecuperable.id)) {
+                        await member.roles.add(roleBouletIrrecuperable);
+                        console.log(`Boulet Irrécupérable attribué à ${member.user.tag}`);
                     }
                 } else {
-                    if (
-                        member.roles.cache.has(
-                            ROLE_BOULET_IRRECUPERABLE_ID
-                        )
-                    ) {
-                        await member.roles
-                            .remove(ROLE_BOULET_IRRECUPERABLE_ID)
-                            .catch(console.error);
-
-                        console.log(
-                            `💀 Rôle Boulet Irrécupérable retiré à ${member.user.username}`
-                        );
+                    if (member.roles.cache.has(roleBouletIrrecuperable.id)) {
+                        await member.roles.remove(roleBouletIrrecuperable);
                     }
                 }
             }
         }
-    } catch (err) {
-        console.error(
-            "Erreur lors de la mise à jour des rôles :",
-            err
-        );
+    } catch (error) {
+        console.error("Erreur lors de l'attribution des rôles :", error);
     }
 }
-
 // =====================================================
 // 🌐 SERVEUR HTTP
 // =====================================================
