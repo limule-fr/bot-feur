@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "commit": "git add . && git commit -m \"update\" && node scripts/post-commit.js && git push origin main"
+    "commit": "git add . && git commit -m \"update\" && node scripts/post-commit.js && git push origin main",
+    "backup-stats": "node scripts/post_commit2.js"
   },
   "keywords": [],
   "author": "",

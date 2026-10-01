@@ -1,0 +1,2 @@
+commandes(commands):
+-npm run commit --> do a commit named "update"
