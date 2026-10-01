@@ -18,6 +18,7 @@ const {
 const { execSync } = require("child_process");
 const Redis = require("ioredis");
 
+console.log("REDIS_URL présente :", Object.prototype.hasOwnProperty.call(process.env, "REDIS_URL"));
 const redis = process.env.REDIS_URL
     ? new Redis(process.env.REDIS_URL)
     : null;
