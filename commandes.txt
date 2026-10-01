@@ -1,2 +1,3 @@
 commandes(commands):
 -npm run commit --> do a commit named "update"
+-npm run backup-stats --> update "stats.json" from GitHub
