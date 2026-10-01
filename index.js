@@ -21,7 +21,21 @@ const Redis = require("ioredis");
 const redis = process.env.REDIS_URL
     ? new Redis(process.env.REDIS_URL)
     : null;
+if (redis) {
+    redis.on("connect", () => {
+        console.log("Redis connecté");
+    });
 
+    redis.on("ready", () => {
+        console.log("Redis prêt");
+    });
+
+    redis.on("error", (err) => {
+        console.error("Erreur Redis :", err);
+    });
+} else {
+    console.log("REDIS_URL absente : utilisation de stats.json");
+}
 // =====================================================
 // 🎛️ IDS DES RÔLES DISCORD
 // =====================================================
