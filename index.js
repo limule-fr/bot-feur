@@ -627,7 +627,7 @@ client.on(
         if (texte === "!site") {
             return safeReply(
                 message,
-                "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://onrender.com"
+                "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com/"
             );
         }
 
