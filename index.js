@@ -669,6 +669,50 @@ stats.total = Object.values(stats.users)
 
 await saveStats(stats);
 
+// =====================================================
+// 👥 AJOUT AUTOMATIQUE DES MEMBRES AUX STATISTIQUES
+// =====================================================
+
+async function syncMembersWithStats(guild, stats) {
+
+    const members = await guild.members.fetch();
+
+    for (const member of members.values()) {
+
+        // On ignore les bots (MEE6, Pancake, etc.)
+        if (member.user.bot) continue;
+
+        // Si l'utilisateur existe déjà dans les stats,
+        // on ne touche absolument à rien.
+        if (stats.users[member.id]) continue;
+
+        // Sinon, on l'ajoute avec 0 infraction.
+        stats.users[member.id] = {
+            username: member.user.username,
+            count: 0,
+            feur: 0,
+            pourquoi: 0,
+            sexuel: 0,
+            raciste: 0,
+            autre: 0
+        };
+
+        console.log(
+            `Nouveau membre ajouté aux statistiques : ${member.user.tag}`
+        );
+    }
+
+    // Recalcule le total des infractions
+    stats.total = Object.values(stats.users)
+        .reduce(
+            (total, user) =>
+                total + (user.count || 0),
+            0
+        );
+
+    await saveStats(stats);
+}
+
 await checkAndAssignRoles(
     message.guild,
     stats
