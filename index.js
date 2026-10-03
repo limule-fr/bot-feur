@@ -602,6 +602,36 @@ client.once(
         } catch (err) {
             console.error(err);
         }
+
+        // Synchronisation des membres avec les statistiques
+        try {
+
+            const stats = await getStats();
+
+            for (const guild of client.guilds.cache.values()) {
+
+                await syncMembersWithStats(
+                    guild,
+                    stats
+                );
+
+                await checkAndAssignRoles(
+                    guild,
+                    stats
+                );
+            }
+
+            console.log(
+                "Statistiques des membres synchronisées."
+            );
+
+        } catch (err) {
+
+            console.error(
+                "Erreur lors de la synchronisation des membres :",
+                err
+            );
+        }
     }
 );
 
