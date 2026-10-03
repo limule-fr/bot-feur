@@ -637,78 +637,52 @@ client.on(
 
         if (texte === "!injectertriche") {
 
-            if (message.author.id !== OWNER_ID) {
-                return;
-            }
+    if (message.author.id !== OWNER_ID) {
+        return;
+    }
 
-            const statsTrichees = {
+    const statsTrichees = {
 
-                total: 0,
+    total: 0,
 
-                users: {
+    users: {
 
-                    "123456789012345678": {
-                        username: "limule_26543",
-                        count: 50,
-                        feur: 42,
-                        pourquoi: 5,
-                        sexuel: 3,
-                        raciste: 0,
-                        autre: 0
-                    },
+        [OWNER_ID]: {
+            username: "limule_26543",
+            count: 50,
+            feur: 42,
+            pourquoi: 5,
+            sexuel: 3,
+            raciste: 0,
+            autre: 0
+        },
 
-                    "987654321098765432": {
-                        username: "noctalune44",
-                        count: 1,
-                        feur: 1,
-                        pourquoi: 0,
-                        sexuel: 0,
-                        raciste: 0,
-                        autre: 0
-                    },
+    }
+};
+const stats = await getStats();
 
-                    "111222333444555666": {
-                        username: "Un_Ami_Trop_Bavard",
-                        count: 850,
-                        feur: 800,
-                        pourquoi: 40,
-                        sexuel: 10,
-                        raciste: 0,
-                        autre: 0
-                    }
+stats.users[OWNER_ID] = statsTrichees.users[OWNER_ID];
 
-                }
-            };
+stats.total = Object.values(stats.users)
+    .reduce(
+        (total, user) => total + (user.count || 0),
+        0
+    );
 
-            let totalGlobal = 0;
+await saveStats(stats);
 
-            Object.values(
-                statsTrichees.users
-            ).forEach(
-                u => {
-                    totalGlobal +=
-                        u.count || 0;
-                }
-            );
+await checkAndAssignRoles(
+    message.guild,
+    stats
+);
 
-            statsTrichees.total =
-                totalGlobal;
+   
 
-            await saveStats(
-                statsTrichees
-            );
-
-            // Mise à jour des rôles après injection
-            await checkAndAssignRoles(
-                message.guild,
-                statsTrichees
-            );
-
-            return safeReply(
-                message,
-                `🚀 **Triche injectée avec succès depuis Render !** Total global : ${totalGlobal} fautes. Tu peux aller voir le site.`
-            );
-        }
+    return safeReply(
+        message,
+        `Triche injectée pour limule_26543. Total global : ${stats.total} fautes.`
+    );
+}
 
         // =================================================
         // 📊 !stats
@@ -716,6 +690,7 @@ client.on(
 
         if (texte === "!stats") {
 
+            const LIMULE_ID = OWNER_ID;
             const stats =
                 await getStats();
 
