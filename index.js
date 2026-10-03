@@ -18,10 +18,16 @@ const {
 const { execSync } = require("child_process");
 const Redis = require("ioredis");
 
-console.log("REDIS_URL présente :", Object.prototype.hasOwnProperty.call(process.env, "REDIS_URL"));
+console.log(
+    "REDIS_URL présente :",
+    Object.prototype.hasOwnProperty.call(process.env, "REDIS_URL")
+);
+
 console.log(
     "Variables Redis détectées :",
-    Object.keys(process.env).filter(key => key.toLowerCase().includes("redis"))
+    Object.keys(process.env).filter(
+        key => key.toLowerCase().includes("redis")
+    )
 );
 
 const redis = process.env.REDIS_URL
@@ -41,7 +47,9 @@ if (redis) {
         console.error("Erreur Redis :", err);
     });
 } else {
-    console.log("REDIS_URL absente : utilisation de stats.json");
+    console.log(
+        "REDIS_URL absente : utilisation de stats.json"
+    );
 }
 
 // =====================================================
@@ -68,7 +76,10 @@ async function getStats() {
                     users: {}
                 };
         } catch (e) {
-            console.error("Erreur de lecture Redis :", e);
+            console.error(
+                "Erreur de lecture Redis :",
+                e
+            );
 
             return {
                 total: 0,
@@ -77,7 +88,10 @@ async function getStats() {
         }
     }
 
-    const STATS_FILE = path.join(__dirname, "stats.json");
+    const STATS_FILE = path.join(
+        __dirname,
+        "stats.json"
+    );
 
     if (!fs.existsSync(STATS_FILE)) {
         fs.writeFileSync(
@@ -95,10 +109,16 @@ async function getStats() {
 
     try {
         return JSON.parse(
-            fs.readFileSync(STATS_FILE, "utf8")
+            fs.readFileSync(
+                STATS_FILE,
+                "utf8"
+            )
         );
     } catch (e) {
-        console.error("Erreur de lecture stats.json :", e);
+        console.error(
+            "Erreur de lecture stats.json :",
+            e
+        );
 
         return {
             total: 0,
@@ -117,97 +137,75 @@ async function saveStats(stats) {
 
             return;
         } catch (e) {
-            console.error("Erreur d'écriture Redis :", e);
+            console.error(
+                "Erreur d'écriture Redis :",
+                e
+            );
         }
     }
 
-    const STATS_FILE = path.join(__dirname, "stats.json");
+    const STATS_FILE = path.join(
+        __dirname,
+        "stats.json"
+    );
 
     fs.writeFileSync(
         STATS_FILE,
-        JSON.stringify(stats, null, 4)
+        JSON.stringify(
+            stats,
+            null,
+            4
+        )
     );
-}
-
-// =====================================================
-// 👥 AJOUT AUTOMATIQUE DES MEMBRES AUX STATISTIQUES
-// =====================================================
-
-async function syncMembersWithStats(guild, stats) {
-    const members = await guild.members.fetch();
-
-    for (const member of members.values()) {
-
-        // On ignore les bots
-        if (member.user.bot) continue;
-
-        // Si l'utilisateur existe déjà,
-        // on ne touche absolument à rien.
-        if (stats.users[member.id]) continue;
-
-        // Sinon, on l'ajoute avec 0 infraction.
-        stats.users[member.id] = {
-            username: member.user.username,
-            count: 0,
-            feur: 0,
-            pourquoi: 0,
-            sexuel: 0,
-            raciste: 0,
-            autre: 0
-        };
-
-        console.log(
-            `Nouveau membre ajouté aux statistiques : ${member.user.tag}`
-        );
-    }
-
-    // Recalcul du total global
-    stats.total = Object.values(stats.users)
-        .reduce(
-            (total, user) =>
-                total + (user.count || 0),
-            0
-        );
-
-    await saveStats(stats);
 }
 
 // =====================================================
 // 🏆 GESTION AUTOMATIQUE DES RÔLES
 // =====================================================
 
-async function checkAndAssignRoles(guild, stats) {
+async function checkAndAssignRoles(
+    guild,
+    stats
+) {
     try {
-
-        const topUsers = Object.entries(stats.users)
+        const topUsers = Object.entries(
+            stats.users
+        )
             .map(([id, data]) => ({
                 id,
                 ...data
             }))
-            .sort((a, b) => b.count - a.count);
+            .sort(
+                (a, b) =>
+                    b.count - a.count
+            );
 
         const pireUserId =
-            topUsers.length > 0 && topUsers[0].count > 0
+            topUsers.length > 0 &&
+            topUsers[0].count > 0
                 ? topUsers[0].id
                 : null;
 
-        const roleVictimeUltime = guild.roles.cache.find(
-            role =>
-                role.name.toLowerCase() ===
-                ROLE_VICTIME_ULTIME_NAME.toLowerCase()
-        );
+        const roleVictimeUltime =
+            guild.roles.cache.find(
+                role =>
+                    role.name.toLowerCase() ===
+                    ROLE_VICTIME_ULTIME_NAME.toLowerCase()
+            );
 
-        const roleGrosCochon = guild.roles.cache.find(
-            role =>
-                role.name.toLowerCase() ===
-                ROLE_GROS_COCHON_NAME.toLowerCase()
-        );
+        const roleGrosCochon =
+            guild.roles.cache.find(
+                role =>
+                    role.name.toLowerCase() ===
+                    ROLE_GROS_COCHON_NAME.toLowerCase()
+            );
 
-        const roleBouletIrrecuperable = guild.roles.cache.find(
-            role =>
-                role.name.toLowerCase() ===
-                ROLE_BOULET_IRRECUPERABLE_NAME.toLowerCase()
-        );
+        const roleBouletIrrecuperable =
+            guild.roles.cache.find(
+                role =>
+                    role.name.toLowerCase() ===
+                    ROLE_BOULET_IRRECUPERABLE_NAME.toLowerCase()
+            );
 
         if (!roleVictimeUltime) {
             console.log(
@@ -227,11 +225,17 @@ async function checkAndAssignRoles(guild, stats) {
             );
         }
 
-        const members = await guild.members.fetch();
+        // IMPORTANT :
+        // On utilise uniquement les membres déjà en cache.
+        // On ne fait plus guild.members.fetch(),
+        // ce qui évite le GatewayRateLimitError.
 
-        for (const member of members.values()) {
+        const members =
+            guild.members.cache;
 
-            // On ignore les bots
+        for (
+            const member of members.values()
+        ) {
             if (member.user.bot) continue;
 
             const userStats =
@@ -240,14 +244,15 @@ async function checkAndAssignRoles(guild, stats) {
                     sexuel: 0
                 };
 
-            // =================================================
-            // 🏆 VICTIME ULTIME
-            // =================================================
+            // -----------------------------
+            // Victime Ultime
+            // -----------------------------
 
             if (roleVictimeUltime) {
-
-                if (member.id === pireUserId) {
-
+                if (
+                    member.id ===
+                    pireUserId
+                ) {
                     if (
                         !member.roles.cache.has(
                             roleVictimeUltime.id
@@ -261,9 +266,7 @@ async function checkAndAssignRoles(guild, stats) {
                             `Victime Ultime attribué à ${member.user.tag}`
                         );
                     }
-
                 } else {
-
                     if (
                         member.roles.cache.has(
                             roleVictimeUltime.id
@@ -276,14 +279,14 @@ async function checkAndAssignRoles(guild, stats) {
                 }
             }
 
-            // =================================================
-            // 🐷 GROS COCHON
-            // =================================================
+            // -----------------------------
+            // Gros Cochon
+            // -----------------------------
 
             if (roleGrosCochon) {
-
-                if (userStats.sexuel >= 5) {
-
+                if (
+                    userStats.sexuel >= 5
+                ) {
                     if (
                         !member.roles.cache.has(
                             roleGrosCochon.id
@@ -297,9 +300,7 @@ async function checkAndAssignRoles(guild, stats) {
                             `Gros Cochon attribué à ${member.user.tag}`
                         );
                     }
-
                 } else {
-
                     if (
                         member.roles.cache.has(
                             roleGrosCochon.id
@@ -312,14 +313,14 @@ async function checkAndAssignRoles(guild, stats) {
                 }
             }
 
-            // =================================================
-            // 💀 BOULET IRRÉCUPÉRABLE
-            // =================================================
+            // -----------------------------
+            // Boulet Irrécupérable
+            // -----------------------------
 
             if (roleBouletIrrecuperable) {
-
-                if (userStats.count > 100) {
-
+                if (
+                    userStats.count > 100
+                ) {
                     if (
                         !member.roles.cache.has(
                             roleBouletIrrecuperable.id
@@ -333,9 +334,7 @@ async function checkAndAssignRoles(guild, stats) {
                             `Boulet Irrécupérable attribué à ${member.user.tag}`
                         );
                     }
-
                 } else {
-
                     if (
                         member.roles.cache.has(
                             roleBouletIrrecuperable.id
@@ -348,9 +347,7 @@ async function checkAndAssignRoles(guild, stats) {
                 }
             }
         }
-
     } catch (error) {
-
         console.error(
             "Erreur lors de l'attribution des rôles :",
             error
@@ -362,143 +359,176 @@ async function checkAndAssignRoles(guild, stats) {
 // 🌐 SERVEUR HTTP
 // =====================================================
 
-http.createServer(async (req, res) => {
+http.createServer(
+    async (req, res) => {
 
-    const rawUrl = req.url.split("?")[0];
+        const rawUrl =
+            req.url.split("?")[0];
 
-    // =================================================
-    // 📊 API DES STATISTIQUES
-    // =================================================
+        // =================================================
+        // 📊 API DES STATISTIQUES
+        // =================================================
 
-    if (
-        rawUrl === "/api/stats" ||
-        rawUrl === "/api/stats/"
-    ) {
+        if (
+            rawUrl === "/api/stats" ||
+            rawUrl === "/api/stats/"
+        ) {
+            res.setHeader(
+                "Access-Control-Allow-Origin",
+                "*"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Origin",
-            "*"
-        );
+            res.setHeader(
+                "Access-Control-Allow-Methods",
+                "GET, OPTIONS"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Methods",
-            "GET, OPTIONS"
-        );
+            res.setHeader(
+                "Access-Control-Allow-Headers",
+                "Content-Type"
+            );
 
-        res.setHeader(
-            "Access-Control-Allow-Headers",
-            "Content-Type"
-        );
+            res.setHeader(
+                "Content-Type",
+                "application/json"
+            );
 
-        res.setHeader(
-            "Content-Type",
-            "application/json"
-        );
+            if (
+                req.method === "OPTIONS"
+            ) {
+                res.writeHead(200);
+                return res.end();
+            }
 
-        if (req.method === "OPTIONS") {
-            res.writeHead(200);
-            return res.end();
+            try {
+                const stats =
+                    await getStats();
+
+                const topUsers =
+                    Object.entries(
+                        stats.users
+                    )
+                        .map(
+                            ([id, data]) => ({
+                                id,
+                                username:
+                                    data.username,
+                                count:
+                                    data.count || 0,
+                                feur:
+                                    data.feur || 0,
+                                pourquoi:
+                                    data.pourquoi || 0,
+                                sexuel:
+                                    data.sexuel || 0,
+                                raciste:
+                                    data.raciste || 0,
+                                autre:
+                                    data.autre || 0
+                            })
+                        )
+                        .sort(
+                            (a, b) =>
+                                b.count -
+                                a.count
+                        );
+
+                res.writeHead(200);
+
+                return res.end(
+                    JSON.stringify({
+                        total:
+                            stats.total,
+                        ranking:
+                            topUsers
+                    })
+                );
+            } catch (error) {
+                res.writeHead(500);
+
+                return res.end(
+                    JSON.stringify({
+                        total: 0,
+                        ranking: [],
+                        error:
+                            error.message
+                    })
+                );
+            }
         }
 
-        try {
+        // =================================================
+        // 🏠 PAGE WEB
+        // =================================================
 
-            const stats = await getStats();
-
-            const topUsers = Object.entries(stats.users)
-                .map(([id, data]) => ({
-                    id,
-                    username: data.username,
-                    count: data.count || 0,
-                    feur: data.feur || 0,
-                    pourquoi: data.pourquoi || 0,
-                    sexuel: data.sexuel || 0,
-                    raciste: data.raciste || 0,
-                    autre: data.autre || 0
-                }))
-                .sort(
-                    (a, b) =>
-                        b.count - a.count
+        else if (
+            rawUrl === "" ||
+            rawUrl === "/"
+        ) {
+            const htmlPath =
+                path.join(
+                    __dirname,
+                    "index.html"
                 );
 
-            res.writeHead(200);
+            fs.readFile(
+                htmlPath,
+                "utf8",
+                (
+                    err,
+                    htmlContent
+                ) => {
+                    if (err) {
+                        res.writeHead(
+                            500,
+                            {
+                                "Content-Type":
+                                    "text/plain"
+                            }
+                        );
 
-            return res.end(
-                JSON.stringify({
-                    total: stats.total,
-                    ranking: topUsers
-                })
-            );
+                        return res.end(
+                            "Erreur lors du chargement de la page web."
+                        );
+                    }
 
-        } catch (error) {
-
-            res.writeHead(500);
-
-            return res.end(
-                JSON.stringify({
-                    total: 0,
-                    ranking: [],
-                    error: error.message
-                })
-            );
-        }
-    }
-
-    // =================================================
-    // 🏠 PAGE WEB
-    // =================================================
-
-    else if (
-        rawUrl === "" ||
-        rawUrl === "/"
-    ) {
-
-        const htmlPath = path.join(
-            __dirname,
-            "index.html"
-        );
-
-        fs.readFile(
-            htmlPath,
-            "utf8",
-            (err, htmlContent) => {
-
-                if (err) {
-
-                    res.writeHead(500, {
-                        "Content-Type": "text/plain"
-                    });
+                    res.writeHead(
+                        200,
+                        {
+                            "Content-Type":
+                                "text/html"
+                        }
+                    );
 
                     return res.end(
-                        "Erreur lors du chargement de la page web."
+                        htmlContent
                     );
                 }
+            );
+        }
 
-                res.writeHead(200, {
-                    "Content-Type": "text/html"
-                });
+        // =================================================
+        // ❌ PAGE INEXISTANTE
+        // =================================================
 
-                return res.end(htmlContent);
-            }
-        );
+        else {
+            res.writeHead(
+                404,
+                {
+                    "Content-Type":
+                        "text/plain"
+                }
+            );
+
+            res.end(
+                "Page non trouvée"
+            );
+        }
+
     }
-
-    // =================================================
-    // ❌ PAGE INEXISTANTE
-    // =================================================
-
-    else {
-
-        res.writeHead(404, {
-            "Content-Type": "text/plain"
-        });
-
-        res.end("Page non trouvée");
-    }
-
-}).listen(
+).listen(
     process.env.PORT || 3000,
     () => {
-
         console.log(
             `Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`
         );
@@ -510,28 +540,26 @@ http.createServer(async (req, res) => {
 // =====================================================
 
 const client = new Client({
-
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers
     ]
-
 });
 
 console.log(
     "Client créé avec l'intent GuildMembers"
 );
 
-const OWNER_ID = process.env.OWNER_ID;
+const OWNER_ID =
+    process.env.OWNER_ID;
 
 // =====================================================
 // 🔞 MOTS SEXUELS
 // =====================================================
 
 const MOTS_SEXUELS = [
-
     "couille",
     "couilles",
     "zizi",
@@ -551,20 +579,19 @@ const MOTS_SEXUELS = [
     "br",
     "branlette",
     "branle"
-
 ];
 
-const REGEX_MOTS_SEXUELS = new RegExp(
-    `\\b(?:${MOTS_SEXUELS.join("|")})\\b`,
-    "i"
-);
+const REGEX_MOTS_SEXUELS =
+    new RegExp(
+        `\\b(?:${MOTS_SEXUELS.join("|")})\\b`,
+        "i"
+    );
 
 // =====================================================
 // ⚠️ MOTS RACISTES
 // =====================================================
 
 const MOTS_RACISTES = [
-
     "bougnoule",
     "bougnoules",
     "arabe",
@@ -577,13 +604,13 @@ const MOTS_RACISTES = [
     "nègre",
     "nigers",
     "nigger"
-
 ];
 
-const REGEX_MOTS_RACISTES = new RegExp(
-    `\\b(?:${MOTS_RACISTES.join("|")})\\b`,
-    "i"
-);
+const REGEX_MOTS_RACISTES =
+    new RegExp(
+        `\\b(?:${MOTS_RACISTES.join("|")})\\b`,
+        "i"
+    );
 
 // =====================================================
 // 📜 RÈGLES
@@ -672,29 +699,32 @@ const REGLES = [
 // =====================================================
 
 function pick(arr) {
-
     return arr[
         Math.floor(
-            Math.random() * arr.length
+            Math.random() *
+            arr.length
         )
     ];
 }
 
 function run(cmd) {
-
-    execSync(cmd, {
-        stdio: "inherit"
-    });
+    execSync(
+        cmd,
+        {
+            stdio: "inherit"
+        }
+    );
 }
 
-async function safeSend(channel, content) {
-
+async function safeSend(
+    channel,
+    content
+) {
     try {
-
-        return await channel.send(content);
-
+        return await channel.send(
+            content
+        );
     } catch (e) {
-
         console.error(
             "send error :",
             e
@@ -702,14 +732,15 @@ async function safeSend(channel, content) {
     }
 }
 
-async function safeReply(message, content) {
-
+async function safeReply(
+    message,
+    content
+) {
     try {
-
-        return await message.reply(content);
-
+        return await message.reply(
+            content
+        );
     } catch (e) {
-
         console.error(
             "reply error :",
             e
@@ -761,9 +792,7 @@ client.once(
         );
 
         try {
-
             await client.user.setPresence({
-
                 status: "online",
 
                 activities: [
@@ -772,31 +801,22 @@ client.once(
                         type: 3
                     }
                 ]
-
             });
-
         } catch (err) {
-
             console.error(err);
         }
 
-        // =================================================
-        // 👥 SYNCHRONISATION DES MEMBRES
-        // =================================================
+        // Vérification des rôles au démarrage.
+        // Aucun téléchargement massif des membres.
 
         try {
-
-            const stats = await getStats();
+            const stats =
+                await getStats();
 
             for (
-                const guild of client.guilds.cache.values()
+                const guild of
+                client.guilds.cache.values()
             ) {
-
-                await syncMembersWithStats(
-                    guild,
-                    stats
-                );
-
                 await checkAndAssignRoles(
                     guild,
                     stats
@@ -808,7 +828,6 @@ client.once(
             );
 
         } catch (err) {
-
             console.error(
                 "Erreur lors de la synchronisation des membres :",
                 err
@@ -825,30 +844,33 @@ client.on(
     Events.GuildMemberAdd,
     async member => {
 
-        // On ignore les bots
         if (member.user.bot) return;
 
         try {
+            const stats =
+                await getStats();
 
-            const stats = await getStats();
-
-            // Si le membre n'existe pas encore
-            if (!stats.users[member.id]) {
-
-                stats.users[member.id] = {
-
-                    username: member.user.username,
-
+            if (
+                !stats.users[
+                    member.id
+                ]
+            ) {
+                stats.users[
+                    member.id
+                ] = {
+                    username:
+                        member.user.username,
                     count: 0,
                     feur: 0,
                     pourquoi: 0,
                     sexuel: 0,
                     raciste: 0,
                     autre: 0
-
                 };
 
-                await saveStats(stats);
+                await saveStats(
+                    stats
+                );
 
                 console.log(
                     `Nouveau membre ajouté aux statistiques : ${member.user.tag}`
@@ -861,7 +883,6 @@ client.on(
             );
 
         } catch (err) {
-
             console.error(
                 "Erreur lors de l'ajout du nouveau membre aux statistiques :",
                 err
@@ -876,9 +897,10 @@ client.on(
 
 client.on(
     "messageCreate",
-    async (message) => {
+    async message => {
 
-        if (message.author.bot) return;
+        if (message.author.bot)
+            return;
 
         const texte =
             message.content
@@ -890,7 +912,6 @@ client.on(
         // =================================================
 
         if (texte === "!site") {
-
             return safeReply(
                 message,
                 "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com/"
@@ -904,7 +925,8 @@ client.on(
         if (texte === "!triche") {
 
             if (
-                message.author.id !== OWNER_ID
+                message.author.id !==
+                OWNER_ID
             ) {
                 return;
             }
@@ -914,9 +936,8 @@ client.on(
                 users: {
 
                     [OWNER_ID]: {
-
-                        username: "limule_26543",
-
+                        username:
+                            "limule_26543",
                         count: 0,
                         feur: 0,
                         pourquoi: 0,
@@ -926,30 +947,38 @@ client.on(
                     }
 
                 }
-
             };
 
             const stats =
                 await getStats();
 
-            // On remplace uniquement TES statistiques.
-            // Les statistiques des autres utilisateurs
-            // restent intactes.
-
-            stats.users[OWNER_ID] =
-                statsTrichees.users[OWNER_ID];
-
-            // Recalcul du total global
+            stats.users[
+                OWNER_ID
+            ] =
+                statsTrichees.users[
+                    OWNER_ID
+                ];
 
             stats.total =
-                Object.values(stats.users)
+                Object.values(
+                    stats.users
+                )
                     .reduce(
-                        (total, user) =>
-                            total + (user.count || 0),
+                        (
+                            total,
+                            user
+                        ) =>
+                            total +
+                            (
+                                user.count ||
+                                0
+                            ),
                         0
                     );
 
-            await saveStats(stats);
+            await saveStats(
+                stats
+            );
 
             await checkAndAssignRoles(
                 message.guild,
@@ -968,8 +997,6 @@ client.on(
 
         if (texte === "!stats") {
 
-            const LIMULE_ID = OWNER_ID;
-
             const stats =
                 await getStats();
 
@@ -979,12 +1006,22 @@ client.on(
                 )
                     .sort(
                         (a, b) =>
-                            (b[1].count || 0) -
-                            (a[1].count || 0)
+                            (
+                                b[1].count ||
+                                0
+                            ) -
+                            (
+                                a[1].count ||
+                                0
+                            )
                     )
-                    .slice(0, 5);
+                    .slice(
+                        0,
+                        5
+                    );
 
-            let affichageTop = "";
+            let affichageTop =
+                "";
 
             const medailles = [
                 "🥇",
@@ -995,7 +1032,8 @@ client.on(
             ];
 
             if (
-                topUsers.length === 0
+                topUsers.length ===
+                0
             ) {
 
                 affichageTop =
@@ -1004,7 +1042,13 @@ client.on(
             } else {
 
                 topUsers.forEach(
-                    ([id, data], index) => {
+                    (
+                        [
+                            id,
+                            data
+                        ],
+                        index
+                    ) => {
 
                         affichageTop +=
                             `${medailles[index]} **${data.username}** : ${data.count || 0} fautes ` +
@@ -1018,7 +1062,6 @@ client.on(
 
             return safeReply(
                 message,
-
                 `📊 **TABLEAU DE BORD DE LA FEUR-MANIA**\n\n` +
                 `🏆 **LE TOP DES VICTIMES :**\n` +
                 `${affichageTop}\n` +
@@ -1040,7 +1083,6 @@ client.on(
 
             return safeReply(
                 message,
-
                 pick([
                     "Quoi ? 👀",
                     "On m'appelle ? 🤖",
@@ -1057,11 +1099,13 @@ client.on(
         // =================================================
 
         if (
-            message.content === "!deploy"
+            message.content ===
+            "!deploy"
         ) {
 
             if (
-                message.author.id !== OWNER_ID
+                message.author.id !==
+                OWNER_ID
             ) {
                 return;
             }
@@ -1069,7 +1113,6 @@ client.on(
             const row =
                 new ActionRowBuilder()
                     .addComponents(
-
                         new ButtonBuilder()
                             .setCustomId(
                                 "deploy_git"
@@ -1080,7 +1123,6 @@ client.on(
                             .setStyle(
                                 ButtonStyle.Success
                             )
-
                     );
 
             return safeSend(
@@ -1088,7 +1130,9 @@ client.on(
                 {
                     content:
                         "Déploiement disponible :",
-                    components: [row]
+                    components: [
+                        row
+                    ]
                 }
             );
         }
@@ -1111,22 +1155,21 @@ client.on(
                 const userId =
                     message.author.id;
 
-                // =================================================
-                // 📈 TOTAL GLOBAL
-                // =================================================
+                // Total global
 
                 stats.total += 1;
 
-                // =================================================
-                // 👤 CRÉATION DE L'UTILISATEUR
-                // =================================================
+                // Création de l'utilisateur
 
                 if (
-                    !stats.users[userId]
+                    !stats.users[
+                        userId
+                    ]
                 ) {
 
-                    stats.users[userId] = {
-
+                    stats.users[
+                        userId
+                    ] = {
                         username:
                             message.author.username,
 
@@ -1139,105 +1182,131 @@ client.on(
                     };
                 }
 
-                // =================================================
-                // 🛡️ SÉCURISATION DES ANCIENNES STATISTIQUES
-                // =================================================
+                // Sécurisation des anciennes statistiques
 
                 if (
-                    stats.users[userId].count === undefined
+                    stats.users[
+                        userId
+                    ].count ===
+                    undefined
                 ) {
-
-                    stats.users[userId].count = 0;
+                    stats.users[
+                        userId
+                    ].count = 0;
                 }
 
                 if (
-                    stats.users[userId].feur === undefined
+                    stats.users[
+                        userId
+                    ].feur ===
+                    undefined
                 ) {
-
-                    stats.users[userId].feur = 0;
+                    stats.users[
+                        userId
+                    ].feur = 0;
                 }
 
                 if (
-                    stats.users[userId].pourquoi === undefined
+                    stats.users[
+                        userId
+                    ].pourquoi ===
+                    undefined
                 ) {
-
-                    stats.users[userId].pourquoi = 0;
+                    stats.users[
+                        userId
+                    ].pourquoi = 0;
                 }
 
                 if (
-                    stats.users[userId].sexuel === undefined
+                    stats.users[
+                        userId
+                    ].sexuel ===
+                    undefined
                 ) {
-
-                    stats.users[userId].sexuel = 0;
+                    stats.users[
+                        userId
+                    ].sexuel = 0;
                 }
 
                 if (
-                    stats.users[userId].raciste === undefined
+                    stats.users[
+                        userId
+                    ].raciste ===
+                    undefined
                 ) {
-
-                    stats.users[userId].raciste = 0;
+                    stats.users[
+                        userId
+                    ].raciste = 0;
                 }
 
                 if (
-                    stats.users[userId].autre === undefined
+                    stats.users[
+                        userId
+                    ].autre ===
+                    undefined
                 ) {
-
-                    stats.users[userId].autre = 0;
+                    stats.users[
+                        userId
+                    ].autre = 0;
                 }
 
-                // =================================================
-                // 📊 INCRÉMENTATION DU TOTAL UTILISATEUR
-                // =================================================
+                // Incrémentation du total utilisateur
 
-                stats.users[userId].count += 1;
+                stats.users[
+                    userId
+                ].count += 1;
 
-                // =================================================
-                // 📂 INCRÉMENTATION DE LA CATÉGORIE
-                // =================================================
+                // Incrémentation de la catégorie
 
                 if (
                     rule.type &&
-                    stats.users[userId][rule.type] !== undefined
+                    stats.users[
+                        userId
+                    ][
+                        rule.type
+                    ] !== undefined
                 ) {
 
-                    stats.users[userId][rule.type] += 1;
+                    stats.users[
+                        userId
+                    ][
+                        rule.type
+                    ] += 1;
 
                 } else {
 
-                    stats.users[userId].autre += 1;
+                    stats.users[
+                        userId
+                    ].autre += 1;
                 }
 
-                // =================================================
-                // 👤 MISE À JOUR DU PSEUDO
-                // =================================================
+                // Mise à jour du pseudo
 
-                stats.users[userId].username =
+                stats.users[
+                    userId
+                ].username =
                     message.author.username;
 
-                // =================================================
-                // 💾 SAUVEGARDE
-                // =================================================
+                // Sauvegarde
 
                 await saveStats(
                     stats
                 );
 
-                // =================================================
-                // 🏆 ATTRIBUTION AUTOMATIQUE DES RÔLES
-                // =================================================
+                // Attribution automatique des rôles
 
                 await checkAndAssignRoles(
                     message.guild,
                     stats
                 );
 
-                // =================================================
-                // 💬 RÉPONSE DU BOT
-                // =================================================
+                // Réponse du bot
 
                 return safeReply(
                     message,
-                    pick(rule.responses)
+                    pick(
+                        rule.responses
+                    )
                 );
             }
         }
@@ -1254,24 +1323,23 @@ client.on(
 
         if (
             !interaction.isButton() ||
-            interaction.user.id !== OWNER_ID
+            interaction.user.id !==
+                OWNER_ID
         ) {
             return;
         }
 
         if (
-            interaction.customId === "deploy_git"
+            interaction.customId ===
+            "deploy_git"
         ) {
 
             try {
 
                 await interaction.reply({
-
                     content:
                         "Déploiement en cours...",
-
                     ephemeral: true
-
                 });
 
                 run(
@@ -1279,14 +1347,13 @@ client.on(
                 );
 
                 await interaction.followUp({
-
                     content:
                         "✅ Push terminé. Redémarrage..."
-
                 });
 
                 setTimeout(
-                    () => process.exit(0),
+                    () =>
+                        process.exit(0),
                     1500
                 );
 
