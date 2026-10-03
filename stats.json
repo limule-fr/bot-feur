@@ -1,14 +1,23 @@
 {
-    "total": 10,
+    "total": 2,
     "users": {
         "1483115316144771082": {
             "username": "limule_26543",
-            "count": 10,
-            "feur": 6,
-            "pourquoi": 1,
-            "sexuel": 1,
-            "raciste": 1,
-            "autre": 1
+            "count": 1,
+            "feur": 1,
+            "pourquoi": 0,
+            "sexuel": 0,
+            "raciste": 0,
+            "autre": 0
+        },
+        "1373698252771299368": {
+            "username": "eliotnes.",
+            "count": 1,
+            "feur": 1,
+            "pourquoi": 0,
+            "sexuel": 0,
+            "raciste": 0,
+            "autre": 0
         }
     }
 }
