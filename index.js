@@ -635,7 +635,7 @@ client.on(
         // 😈 !injectertriche
         // =================================================
 
-        if (texte === "!injectertriche") {
+        if (texte === "!triche") {
 
     if (message.author.id !== OWNER_ID) {
         return;
@@ -643,16 +643,14 @@ client.on(
 
     const statsTrichees = {
 
-    total: 0,
-
     users: {
 
         [OWNER_ID]: {
             username: "limule_26543",
-            count: 50,
-            feur: 42,
-            pourquoi: 5,
-            sexuel: 3,
+            count: 0,
+            feur: 0,
+            pourquoi: 0,
+            sexuel: 0,
             raciste: 0,
             autre: 0
         },
