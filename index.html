@@ -1,298 +1,236 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feur-Mania - Statistiques Détaillées</title>
+    <title>Feur-Mania - Tableau de bord</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a2e;
-            color: #ffffff;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
             display: flex;
             justify-content: center;
-            align-items: center;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
         }
 
-    .container {
-        background-color: #162447;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        width: 100%;
-        max-width: 650px;
-        text-align: center;
-    }
+        .container {
+            background: #162447;
+            padding: 30px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,.3);
+        }
 
-    h1 {
-        color: #e43f5a;
-        margin-bottom: 5px;
-    }
+        h1 { color: #e43f5a; margin-bottom: 5px; }
+        h2 { margin-top: 28px; }
 
-    .subtitle {
-        color: #8a99ad;
-        margin-bottom: 25px;
-        font-size: 0.9em;
-    }
+        .subtitle {
+            color: #8a99ad;
+            margin-bottom: 25px;
+        }
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 25px;
-    }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-    .counter-box {
-        background-color: #1f4068;
-        padding: 15px;
-        border-radius: 8px;
-        font-size: 1.1em;
-        font-weight: bold;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+        .counter-box, .chart-container, .ranking-item {
+            background: #1f4068;
+            border-radius: 8px;
+        }
 
-    .counter-box span {
-        color: #e43f5a;
-        font-size: 1.3em;
-        margin-top: 5px;
-    }
+        .counter-box {
+            padding: 15px;
+            font-weight: bold;
+        }
 
-    .counter-box.aura span {
-        color: #00d2fc;
-    }
+        .counter-box span {
+            display: block;
+            color: #e43f5a;
+            font-size: 1.3em;
+            margin-top: 5px;
+        }
 
-    .chart-container {
-        background-color: #1f4068;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 25px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 340px;
-    }
+        .chart-container {
+            padding: 20px;
+            margin-top: 15px;
+            min-height: 340px;
+            display: flex;
+            justify-content: center;
+        }
 
-    .ranking-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        text-align: left;
-    }
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
 
-    .ranking-item {
-        display: flex;
-        flex-direction: column;
-        background-color: #1f4068;
-        padding: 15px;
-        margin-bottom: 12px;
-        border-radius: 8px;
-        transition: transform 0.2s;
-    }
+        .ranking-item {
+            padding: 15px;
+            margin-bottom: 12px;
+        }
 
-    .ranking-item:hover {
-        transform: scale(1.01);
-    }
+        .main-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
 
-    .main-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-    }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+        .username {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
 
-    .rank {
-        font-weight: bold;
-        width: 25px;
-    }
+        .total-count {
+            background: #e43f5a;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: .85em;
+            font-weight: bold;
+        }
 
-    .username {
-        font-weight: bold;
-        font-size: 1.1em;
-    }
+        .details-box {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
 
-    .total-count {
-        background-color: #e43f5a;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.85em;
-        font-weight: bold;
-    }
+        .badge {
+            font-size: .75em;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
 
-    .details-box {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
+        .badge-feur { background: #4ecc71; }
+        .badge-pourquoi { background: #3498db; }
+        .badge-moderation { background: #f1c40f; color: #000; }
+        .badge-signalement { background: #e74c3c; }
+        .badge-autre { background: #9b59b6; }
 
-    .badge {
-        font-size: 0.75em;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-weight: 500;
-    }
+        .loading {
+            color: #8a99ad;
+            font-style: italic;
+        }
 
-    .badge-feur {
-        background-color: #4ecc71;
-        color: #fff;
-    }
-
-    .badge-pourquoi {
-        background-color: #3498db;
-        color: #fff;
-    }
-
-    .badge-sexuel {
-        background-color: #f1c40f;
-        color: #000;
-    }
-
-    .badge-raciste {
-        background-color: #e74c3c;
-        color: #fff;
-    }
-
-    .badge-autre {
-        background-color: #9b59b6;
-        color: #fff;
-    }
-
-    .loading {
-        color: #8a99ad;
-        font-style: italic;
-    }
-</style>
-
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 
 <body>
-
 <div class="container">
-    <h1>📊 FEUR-MANIA</h1>
+    <h1>FEUR-MANIA</h1>
+    <div class="subtitle">Tableau de bord des statistiques du bot Discord</div>
 
-<div class="subtitle">
-    Le classement public et détaillé du serveur
-</div>
+    <div class="stats-grid">
+        <div class="counter-box">
+            Événements détectés
+            <span id="total-events">0</span>
+        </div>
 
-<div class="stats-grid">
-    <div class="counter-box">
-        🎯 Infractions globales
-        <span id="total-crimes">0</span>
+        <div class="counter-box">
+            Utilisateur le plus actif
+            <span id="top-user">Personne...</span>
+        </div>
     </div>
 
-    <div class="counter-box aura">
-        👑 Aura Farmeur (+999 aura)
-        <span id="aura-user">Personne...</span>
+    <h2>Répartition des événements</h2>
+
+    <div class="chart-container">
+        <canvas id="feurChart" width="300" height="300"></canvas>
     </div>
-</div>
 
-<h2>📊 Répartition des fautes</h2>
+    <h2>Classement détaillé</h2>
 
-<div class="chart-container">
-    <canvas id="feurChart" width="300" height="300"></canvas>
-</div>
+    <div id="loading" class="loading">
+        Chargement des statistiques...
+    </div>
 
-<h2>🏆 Tableau des scores détaillé</h2>
-
-<div id="loading" class="loading">
-    Chargement des statistiques...
-</div>
-
-<ul class="ranking-list" id="ranking-list"></ul>
-
+    <ul class="ranking-list" id="ranking-list"></ul>
 </div>
 
 <script>
-    const API_URL = '/api/stats';
-    let feurChartInstance = null;
+    const API_URL = "/api/stats";
+    let chartInstance = null;
 
     async function fetchStats() {
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
 
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById("loading").style.display = "none";
 
-            const list = document.getElementById('ranking-list');
-            list.innerHTML = '';
+            const list = document.getElementById("ranking-list");
+            list.innerHTML = "";
 
             const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
 
-            let VraiTotalGlobal = 0;
-
             let totalFeur = 0;
             let totalPourquoi = 0;
-            let totalSexuel = 0;
-            let totalRaciste = 0;
+            let totalModeration = 0;
+            let totalSignalement = 0;
             let totalAutre = 0;
 
-            let auraUser = "Personne...";
-
             if (data.ranking && data.ranking.length > 0) {
-                const lastUser = data.ranking[data.ranking.length - 1];
-                auraUser = `${lastUser.username} (${lastUser.count} 🔥)`;
+                const topUser = data.ranking[0];
+
+                document.getElementById("top-user").innerText =
+                    `${topUser.username} (${topUser.count})`;
             }
 
-            document.getElementById('aura-user').innerText = auraUser;
-
             data.ranking.forEach((user, index) => {
-                VraiTotalGlobal += (user.count || 0);
+                totalFeur += user.feur || 0;
+                totalPourquoi += user.pourquoi || 0;
+                totalModeration += user.moderation || 0;
+                totalSignalement += user.signalement || 0;
+                totalAutre += user.autre || 0;
 
-                totalFeur += (user.feur || 0);
-                totalPourquoi += (user.pourquoi || 0);
-                totalSexuel += (user.sexuel || 0);
-                totalRaciste += (user.raciste || 0);
-                totalAutre += (user.autre || 0);
-
-                const medal = medals[index] || "👤";
-
-                const li = document.createElement('li');
-                li.className = 'ranking-item';
+                const li = document.createElement("li");
+                li.className = "ranking-item";
 
                 li.innerHTML = `
                     <div class="main-info">
                         <div class="user-info">
-                            <span class="rank">${medal}</span>
+                            <span>${medals[index] || "👤"}</span>
                             <span class="username">${user.username}</span>
                         </div>
-
-                        <span class="total-count">
-                            ${user.count} fautes
-                        </span>
+                        <span class="total-count">${user.count} événements</span>
                     </div>
 
                     <div class="details-box">
                         <span class="badge badge-feur">
-                            🗣️ Quoi/Feur : ${user.feur}
+                            Quoi/Feur : ${user.feur}
                         </span>
 
                         <span class="badge badge-pourquoi">
-                            ❓ Pourquoi : ${user.pourquoi}
+                            Pourquoi : ${user.pourquoi}
                         </span>
 
-                        <span class="badge badge-sexuel">
-                            🐷 Sexuel : ${user.sexuel}
+                        <span class="badge badge-moderation">
+                            Démo/modération : ${user.moderation}
                         </span>
 
-                        <span class="badge badge-raciste">
-                            🚨 Raciste : ${user.raciste}
+                        <span class="badge badge-signalement">
+                            Signalement : ${user.signalement}
                         </span>
 
                         <span class="badge badge-autre">
-                            ⚙️ Autre : ${user.autre}
+                            Autre : ${user.autre}
                         </span>
                     </div>
                 `;
@@ -300,101 +238,68 @@
                 list.appendChild(li);
             });
 
-            document.getElementById('total-crimes').innerText = VraiTotalGlobal;
+            document.getElementById("total-events").innerText =
+                data.total || 0;
 
-            const ctx = document
-                .getElementById('feurChart')
-                .getContext('2d');
+            const ctx = document.getElementById("feurChart").getContext("2d");
 
-            if (feurChartInstance) {
-                feurChartInstance.destroy();
+            if (chartInstance) {
+                chartInstance.destroy();
             }
 
-            feurChartInstance = new Chart(ctx, {
-                type: 'radar',
-
+            chartInstance = new Chart(ctx, {
+                type: "radar",
                 data: {
                     labels: [
-                        'Quoi/Feur',
-                        'Pourquoi',
-                        'Sexuel',
-                        'Raciste',
-                        'Autre'
+                        "Quoi/Feur",
+                        "Pourquoi",
+                        "Démo/Modération",
+                        "Signalement",
+                        "Autre"
                     ],
-
                     datasets: [{
-                        label: 'Infractions',
-
+                        label: "Événements",
                         data: [
                             totalFeur,
                             totalPourquoi,
-                            totalSexuel,
-                            totalRaciste,
+                            totalModeration,
+                            totalSignalement,
                             totalAutre
                         ],
-
-                        backgroundColor: 'rgba(228, 63, 90, 0.25)',
-                        borderColor: '#e43f5a',
-                        borderWidth: 3,
-
-                        pointBackgroundColor: '#e43f5a',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5
+                        backgroundColor: "rgba(228, 63, 90, 0.25)",
+                        borderColor: "#e43f5a",
+                        borderWidth: 3
                     }]
                 },
-
                 options: {
                     responsive: false,
-                    maintainAspectRatio: true,
-
                     animation: false,
-
                     scales: {
                         r: {
                             beginAtZero: true,
-
-                            angleLines: {
-                                color: 'rgba(255,255,255,0.25)'
-                            },
-
-                            grid: {
-                                color: 'rgba(255,255,255,0.2)'
-                            },
-
                             pointLabels: {
-                                color: '#ffffff',
-                                font: {
-                                    size: 13,
-                                    weight: 'bold'
-                                }
+                                color: "#fff",
+                                font: { size: 13, weight: "bold" }
                             },
-
                             ticks: {
-                                color: '#8a99ad',
-                                backdropColor: 'transparent'
+                                color: "#8a99ad",
+                                backdropColor: "transparent"
                             }
                         }
                     },
-
                     plugins: {
-                        legend: {
-                            display: false
-                        }
+                        legend: { display: false }
                     }
                 }
             });
-
         } catch (error) {
-            console.error('Erreur:', error);
-
-            document.getElementById('loading').innerText =
+            console.error("Erreur :", error);
+            document.getElementById("loading").innerText =
                 "Impossible de charger les statistiques.";
         }
     }
 
     fetchStats();
 </script>
-
 </body>
 </html>
