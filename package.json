@@ -1,16 +1,22 @@
 {
   "name": "bot-feur",
   "version": "1.0.0",
-  "description": "Discord bot feur",
+  "description": "Discord bot démonstrateur avec statistiques, modération et tableau de bord web",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Aucun test automatisé configuré\"",
     "commit": "git add . && git commit -m \"[$(date '+%d/%m/%Y %H:%M')]\" && node scripts/post-commit.js && git push origin main",
     "backup-stats": "node scripts/backup-stats.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "discord",
+    "bot",
+    "nodejs",
+    "discordjs",
+    "redis"
+  ],
+  "author": "limule-fr",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

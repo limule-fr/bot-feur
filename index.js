@@ -1,7 +1,5 @@
 require("dotenv").config();
 
-console.log("Début chargement index.js");
-
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -18,525 +16,234 @@ const {
 const { execSync } = require("child_process");
 const Redis = require("ioredis");
 
-console.log(
-    "REDIS_URL présente :",
-    Object.prototype.hasOwnProperty.call(process.env, "REDIS_URL")
-);
-
-console.log(
-    "Variables Redis détectées :",
-    Object.keys(process.env).filter(
-        key => key.toLowerCase().includes("redis")
-    )
-);
-
 const redis = process.env.REDIS_URL
     ? new Redis(process.env.REDIS_URL)
     : null;
 
 if (redis) {
-    redis.on("connect", () => {
-        console.log("Redis connecté");
-    });
-
-    redis.on("ready", () => {
-        console.log("Redis prêt");
-    });
-
-    redis.on("error", (err) => {
-        console.error("Erreur Redis :", err);
-    });
+    redis.on("connect", () => console.log("Redis connecté"));
+    redis.on("ready", () => console.log("Redis prêt"));
+    redis.on("error", err => console.error("Erreur Redis :", err));
 } else {
-    console.log(
-        "REDIS_URL absente : utilisation de stats.json"
-    );
+    console.log("REDIS_URL absente : utilisation de stats.json");
 }
 
 // =====================================================
-// 🎛️ IDS DES RÔLES DISCORD
+// 🎛️ RÔLES DISCORD
 // =====================================================
 
-const ROLE_VICTIME_ULTIME_NAME = "Victime Ultime";
-const ROLE_GROS_COCHON_NAME = "Gros Cochon";
-const ROLE_BOULET_IRRECUPERABLE_NAME = "Boulet Irrécupérable";
+const ROLE_CHAMPION_FEUR_NAME = "Champion Feur";
+const ROLE_MODERATION_NAME = "Modération active";
+const ROLE_CONTRIBUTEUR_REGULIER_NAME = "Contributeur régulier";
 
 // =====================================================
-// 📊 GESTION DES STATISTIQUES
+// 📊 STATISTIQUES
 // =====================================================
+
+function emptyStats() {
+    return {
+        total: 0,
+        users: {}
+    };
+}
 
 async function getStats() {
     if (redis) {
         try {
             const data = await redis.get("feur_stats");
-
-            return data
-                ? JSON.parse(data)
-                : {
-                    total: 0,
-                    users: {}
-                };
+            return data ? JSON.parse(data) : emptyStats();
         } catch (e) {
-            console.error(
-                "Erreur de lecture Redis :",
-                e
-            );
-
-            return {
-                total: 0,
-                users: {}
-            };
+            console.error("Erreur de lecture Redis :", e);
+            return emptyStats();
         }
     }
 
-    const STATS_FILE = path.join(
-        __dirname,
-        "stats.json"
-    );
+    const statsFile = path.join(__dirname, "stats.json");
 
-    if (!fs.existsSync(STATS_FILE)) {
-        fs.writeFileSync(
-            STATS_FILE,
-            JSON.stringify(
-                {
-                    total: 0,
-                    users: {}
-                },
-                null,
-                4
-            )
-        );
+    if (!fs.existsSync(statsFile)) {
+        fs.writeFileSync(statsFile, JSON.stringify(emptyStats(), null, 4));
     }
 
     try {
-        return JSON.parse(
-            fs.readFileSync(
-                STATS_FILE,
-                "utf8"
-            )
-        );
+        return JSON.parse(fs.readFileSync(statsFile, "utf8"));
     } catch (e) {
-        console.error(
-            "Erreur de lecture stats.json :",
-            e
-        );
-
-        return {
-            total: 0,
-            users: {}
-        };
+        console.error("Erreur de lecture stats.json :", e);
+        return emptyStats();
     }
 }
 
 async function saveStats(stats) {
     if (redis) {
         try {
-            await redis.set(
-                "feur_stats",
-                JSON.stringify(stats)
-            );
-
+            await redis.set("feur_stats", JSON.stringify(stats));
             return;
         } catch (e) {
-            console.error(
-                "Erreur d'écriture Redis :",
-                e
-            );
+            console.error("Erreur d'écriture Redis :", e);
         }
     }
 
-    const STATS_FILE = path.join(
-        __dirname,
-        "stats.json"
-    );
+    const statsFile = path.join(__dirname, "stats.json");
 
     fs.writeFileSync(
-        STATS_FILE,
-        JSON.stringify(
-            stats,
-            null,
-            4
-        )
+        statsFile,
+        JSON.stringify(stats, null, 4)
     );
 }
 
 // =====================================================
-// 🏆 GESTION AUTOMATIQUE DES RÔLES
+// 🏆 ATTRIBUTION AUTOMATIQUE DES RÔLES
 // =====================================================
 
-async function checkAndAssignRoles(
-    guild,
-    stats
-) {
+async function checkAndAssignRoles(guild, stats) {
     try {
-        const topUsers = Object.entries(
-            stats.users
-        )
-            .map(([id, data]) => ({
-                id,
-                ...data
-            }))
-            .sort(
-                (a, b) =>
-                    b.count - a.count
-            );
+        const topUsers = Object.entries(stats.users)
+            .map(([id, data]) => ({ id, ...data }))
+            .sort((a, b) => b.count - a.count);
 
-        const pireUserId =
-            topUsers.length > 0 &&
-            topUsers[0].count > 0
+        const topUserId =
+            topUsers.length > 0 && topUsers[0].count > 0
                 ? topUsers[0].id
                 : null;
 
-        const roleVictimeUltime =
-            guild.roles.cache.find(
-                role =>
-                    role.name.toLowerCase() ===
-                    ROLE_VICTIME_ULTIME_NAME.toLowerCase()
-            );
+        const roleChampionFeur = guild.roles.cache.find(
+            role =>
+                role.name.toLowerCase() ===
+                ROLE_CHAMPION_FEUR_NAME.toLowerCase()
+        );
 
-        const roleGrosCochon =
-            guild.roles.cache.find(
-                role =>
-                    role.name.toLowerCase() ===
-                    ROLE_GROS_COCHON_NAME.toLowerCase()
-            );
+        const roleModeration = guild.roles.cache.find(
+            role =>
+                role.name.toLowerCase() ===
+                ROLE_MODERATION_NAME.toLowerCase()
+        );
 
-        const roleBouletIrrecuperable =
-            guild.roles.cache.find(
-                role =>
-                    role.name.toLowerCase() ===
-                    ROLE_BOULET_IRRECUPERABLE_NAME.toLowerCase()
-            );
+        const roleContributeurRegulier = guild.roles.cache.find(
+            role =>
+                role.name.toLowerCase() ===
+                ROLE_CONTRIBUTEUR_REGULIER_NAME.toLowerCase()
+        );
 
-        if (!roleVictimeUltime) {
-            console.log(
-                `Rôle introuvable : ${ROLE_VICTIME_ULTIME_NAME}`
-            );
-        }
+        const members = guild.members.cache;
 
-        if (!roleGrosCochon) {
-            console.log(
-                `Rôle introuvable : ${ROLE_GROS_COCHON_NAME}`
-            );
-        }
-
-        if (!roleBouletIrrecuperable) {
-            console.log(
-                `Rôle introuvable : ${ROLE_BOULET_IRRECUPERABLE_NAME}`
-            );
-        }
-
-        // IMPORTANT :
-        // On utilise uniquement les membres déjà en cache.
-        // On ne fait plus guild.members.fetch(),
-        // ce qui évite le GatewayRateLimitError.
-
-        const members =
-            guild.members.cache;
-
-        for (
-            const member of members.values()
-        ) {
+        for (const member of members.values()) {
             if (member.user.bot) continue;
 
-            const userStats =
-                stats.users[member.id] || {
-                    count: 0,
-                    sexuel: 0
-                };
+            const userStats = stats.users[member.id] || {
+                count: 0,
+                moderation: 0
+            };
 
-            // -----------------------------
-            // Victime Ultime
-            // -----------------------------
-
-            if (roleVictimeUltime) {
-                if (
-                    member.id ===
-                    pireUserId
-                ) {
-                    if (
-                        !member.roles.cache.has(
-                            roleVictimeUltime.id
-                        )
-                    ) {
-                        await member.roles.add(
-                            roleVictimeUltime
-                        );
-
-                        console.log(
-                            `Victime Ultime attribué à ${member.user.tag}`
-                        );
+            if (roleChampionFeur) {
+                if (member.id === topUserId) {
+                    if (!member.roles.cache.has(roleChampionFeur.id)) {
+                        await member.roles.add(roleChampionFeur);
                     }
-                } else {
-                    if (
-                        member.roles.cache.has(
-                            roleVictimeUltime.id
-                        )
-                    ) {
-                        await member.roles.remove(
-                            roleVictimeUltime
-                        );
-                    }
+                } else if (member.roles.cache.has(roleChampionFeur.id)) {
+                    await member.roles.remove(roleChampionFeur);
                 }
             }
 
-            // -----------------------------
-            // Gros Cochon
-            // -----------------------------
-
-            if (roleGrosCochon) {
-                if (
-                    userStats.sexuel >= 5
-                ) {
-                    if (
-                        !member.roles.cache.has(
-                            roleGrosCochon.id
-                        )
-                    ) {
-                        await member.roles.add(
-                            roleGrosCochon
-                        );
-
-                        console.log(
-                            `Gros Cochon attribué à ${member.user.tag}`
-                        );
+            if (roleModeration) {
+                if (userStats.moderation >= 5) {
+                    if (!member.roles.cache.has(roleModeration.id)) {
+                        await member.roles.add(roleModeration);
                     }
-                } else {
-                    if (
-                        member.roles.cache.has(
-                            roleGrosCochon.id
-                        )
-                    ) {
-                        await member.roles.remove(
-                            roleGrosCochon
-                        );
-                    }
+                } else if (member.roles.cache.has(roleModeration.id)) {
+                    await member.roles.remove(roleModeration);
                 }
             }
 
-            // -----------------------------
-            // Boulet Irrécupérable
-            // -----------------------------
-
-            if (roleBouletIrrecuperable) {
-                if (
-                    userStats.count > 100
-                ) {
-                    if (
-                        !member.roles.cache.has(
-                            roleBouletIrrecuperable.id
-                        )
-                    ) {
-                        await member.roles.add(
-                            roleBouletIrrecuperable
-                        );
-
-                        console.log(
-                            `Boulet Irrécupérable attribué à ${member.user.tag}`
-                        );
+            if (roleContributeurRegulier) {
+                if (userStats.count > 100) {
+                    if (!member.roles.cache.has(roleContributeurRegulier.id)) {
+                        await member.roles.add(roleContributeurRegulier);
                     }
-                } else {
-                    if (
-                        member.roles.cache.has(
-                            roleBouletIrrecuperable.id
-                        )
-                    ) {
-                        await member.roles.remove(
-                            roleBouletIrrecuperable
-                        );
-                    }
+                } else if (member.roles.cache.has(roleContributeurRegulier.id)) {
+                    await member.roles.remove(roleContributeurRegulier);
                 }
             }
         }
     } catch (error) {
-        console.error(
-            "Erreur lors de l'attribution des rôles :",
-            error
-        );
+        console.error("Erreur lors de l'attribution des rôles :", error);
     }
 }
 
 // =====================================================
-// 🌐 SERVEUR HTTP
+// 🌐 SERVEUR HTTP + API
 // =====================================================
 
-http.createServer(
-    async (req, res) => {
+http.createServer(async (req, res) => {
+    const rawUrl = req.url.split("?")[0];
 
-        const rawUrl =
-            req.url.split("?")[0];
+    if (rawUrl === "/api/stats" || rawUrl === "/api/stats/") {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        res.setHeader("Content-Type", "application/json");
 
-        // =================================================
-        // 📊 API DES STATISTIQUES
-        // =================================================
-
-        if (
-            rawUrl === "/api/stats" ||
-            rawUrl === "/api/stats/"
-        ) {
-            res.setHeader(
-                "Access-Control-Allow-Origin",
-                "*"
-            );
-
-            res.setHeader(
-                "Access-Control-Allow-Methods",
-                "GET, OPTIONS"
-            );
-
-            res.setHeader(
-                "Access-Control-Allow-Headers",
-                "Content-Type"
-            );
-
-            res.setHeader(
-                "Content-Type",
-                "application/json"
-            );
-
-            if (
-                req.method === "OPTIONS"
-            ) {
-                res.writeHead(200);
-                return res.end();
-            }
-
-            try {
-                const stats =
-                    await getStats();
-
-                const topUsers =
-                    Object.entries(
-                        stats.users
-                    )
-                        .map(
-                            ([id, data]) => ({
-                                id,
-                                username:
-                                    data.username,
-                                count:
-                                    data.count || 0,
-                                feur:
-                                    data.feur || 0,
-                                pourquoi:
-                                    data.pourquoi || 0,
-                                sexuel:
-                                    data.sexuel || 0,
-                                raciste:
-                                    data.raciste || 0,
-                                autre:
-                                    data.autre || 0
-                            })
-                        )
-                        .sort(
-                            (a, b) =>
-                                b.count -
-                                a.count
-                        );
-
-                res.writeHead(200);
-
-                return res.end(
-                    JSON.stringify({
-                        total:
-                            stats.total,
-                        ranking:
-                            topUsers
-                    })
-                );
-            } catch (error) {
-                res.writeHead(500);
-
-                return res.end(
-                    JSON.stringify({
-                        total: 0,
-                        ranking: [],
-                        error:
-                            error.message
-                    })
-                );
-            }
+        if (req.method === "OPTIONS") {
+            res.writeHead(200);
+            return res.end();
         }
 
-        // =================================================
-        // 🏠 PAGE WEB
-        // =================================================
+        try {
+            const stats = await getStats();
 
-        else if (
-            rawUrl === "" ||
-            rawUrl === "/"
-        ) {
-            const htmlPath =
-                path.join(
-                    __dirname,
-                    "index.html"
-                );
+            const ranking = Object.entries(stats.users)
+                .map(([id, data]) => ({
+                    id,
+                    username: data.username,
+                    count: data.count || 0,
+                    feur: data.feur || 0,
+                    pourquoi: data.pourquoi || 0,
+                    moderation: data.moderation || 0,
+                    signalement: data.signalement || 0,
+                    autre: data.autre || 0
+                }))
+                .sort((a, b) => b.count - a.count);
 
-            fs.readFile(
-                htmlPath,
-                "utf8",
-                (
-                    err,
-                    htmlContent
-                ) => {
-                    if (err) {
-                        res.writeHead(
-                            500,
-                            {
-                                "Content-Type":
-                                    "text/plain"
-                            }
-                        );
-
-                        return res.end(
-                            "Erreur lors du chargement de la page web."
-                        );
-                    }
-
-                    res.writeHead(
-                        200,
-                        {
-                            "Content-Type":
-                                "text/html"
-                        }
-                    );
-
-                    return res.end(
-                        htmlContent
-                    );
-                }
-            );
+            res.writeHead(200);
+            return res.end(JSON.stringify({
+                total: stats.total,
+                ranking
+            }));
+        } catch (error) {
+            res.writeHead(500);
+            return res.end(JSON.stringify({
+                total: 0,
+                ranking: [],
+                error: error.message
+            }));
         }
-
-        // =================================================
-        // ❌ PAGE INEXISTANTE
-        // =================================================
-
-        else {
-            res.writeHead(
-                404,
-                {
-                    "Content-Type":
-                        "text/plain"
-                }
-            );
-
-            res.end(
-                "Page non trouvée"
-            );
-        }
-
     }
-).listen(
+
+    if (rawUrl === "" || rawUrl === "/") {
+        const htmlPath = path.join(__dirname, "index.html");
+
+        fs.readFile(htmlPath, "utf8", (err, htmlContent) => {
+            if (err) {
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                return res.end("Erreur lors du chargement de la page web.");
+            }
+
+            res.writeHead(200, { "Content-Type": "text/html" });
+            return res.end(htmlContent);
+        });
+
+        return;
+    }
+
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Page non trouvée");
+}).listen(
     process.env.PORT || 3000,
-    () => {
-        console.log(
-            `Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`
-        );
-    }
+    () => console.log(
+        `Serveur HTTP en écoute sur le port ${process.env.PORT || 3000}`
+    )
 );
 
 // =====================================================
-// 🤖 CONFIGURATION DU BOT DISCORD
+// 🤖 BOT DISCORD
 // =====================================================
 
 const client = new Client({
@@ -548,148 +255,79 @@ const client = new Client({
     ]
 });
 
-console.log(
-    "Client créé avec l'intent GuildMembers"
+const OWNER_ID = process.env.OWNER_ID;
+
+// =====================================================
+// 🧪 DÉCLENCHEURS DE DÉMONSTRATION
+// =====================================================
+
+const MOTS_DEMO = [
+    "botdemo",
+    "moderationtest",
+    "signalementtest"
+];
+
+const REGEX_MOTS_DEMO = new RegExp(
+    `\\b(?:${MOTS_DEMO.join("|")})\\b`,
+    "i"
 );
-
-const OWNER_ID =
-    process.env.OWNER_ID;
-
-// =====================================================
-// 🔞 MOTS SEXUELS
-// =====================================================
-
-const MOTS_SEXUELS = [
-    "couille",
-    "couilles",
-    "zizi",
-    "cul",
-    "fesse",
-    "fesses",
-    "bite",
-    "sexe",
-    "nichon",
-    "nichons",
-    "boob",
-    "boobs",
-    "paf",
-    "paffs",
-    "sucer",
-    "gor",
-    "br",
-    "branlette",
-    "branle"
-];
-
-const REGEX_MOTS_SEXUELS =
-    new RegExp(
-        `\\b(?:${MOTS_SEXUELS.join("|")})\\b`,
-        "i"
-    );
-
-// =====================================================
-// ⚠️ MOTS RACISTES
-// =====================================================
-
-const MOTS_RACISTES = [
-    "bougnoule",
-    "bougnoules",
-    "arabe",
-    "arabes",
-    "nega",
-    "negas",
-    "bougnoul",
-    "negro",
-    "negros",
-    "nègre",
-    "nigers",
-    "nigger"
-];
-
-const REGEX_MOTS_RACISTES =
-    new RegExp(
-        `\\b(?:${MOTS_RACISTES.join("|")})\\b`,
-        "i"
-    );
 
 // =====================================================
 // 📜 RÈGLES
 // =====================================================
 
 const REGLES = [
-
     {
-        type: "raciste",
+        type: "signalement",
 
-        match: (t) =>
-            REGEX_MOTS_RACISTES.test(t),
+        match: t =>
+            /\b(67|six\s*seven|6\s*7)\b/i.test(t),
 
         responses: [
-            "SALE RACISTE !"
+            "Message détecté par le module de filtrage.",
+            "Déclencheur identifié.",
+            "Le système a repéré ce motif."
         ]
     },
 
     {
-        type: "sexuel",
+        type: "moderation",
 
-        match: (t) =>
-            REGEX_MOTS_SEXUELS.test(t),
-
-        responses: [
-            "gros cochon 🐷",
-            "sale porc",
-            "you dirty pervert",
-            "hmm, tu m'excite",
-            "fait voir ?"
-        ]
-    },
-
-    {
-        type: "autre",
-
-        match: (t) =>
-            /\b67\b/.test(t) ||
-            /\bsix\s*seven\b/i.test(t) ||
-            /\b6\s*7\b/.test(t),
+        match: t =>
+            REGEX_MOTS_DEMO.test(t),
 
         responses: [
-            "pas de ça ici",
-            "pourquoi faire ?",
-            "bro tu es genant",
-            "je t'en supplie, non"
+            "Déclencheur de démonstration détecté.",
+            "Le module de modération a réagi.",
+            "Événement enregistré dans les statistiques."
         ]
     },
 
     {
         type: "pourquoi",
 
-        match: (t) =>
+        match: t =>
             /\b(pourquoi+|pk+|pqwa+)\b/i.test(t),
 
         responses: [
             "Parce que Feur",
-            "car c'est comme ça",
-            "bah jsp",
-            "pcq vas te faire foutre"
+            "Car c'est comme ça.",
+            "Réponse automatique : Feur."
         ]
     },
 
     {
         type: "feur",
 
-        match: (t) =>
+        match: t =>
             /\b(quoi+|koi+|kwa+|qoi+|quoa+|qwa+)\b/i.test(t),
 
         responses: [
             "Feur",
-            "FEUR 😂",
+            "FEUR",
             "Feuuur",
-            "feur 😏",
-            "feur sale kk",
-            "koubhé",
-            "quoikoufeur",
-            "j en ai marre de toi je répond pas",
-            "https://klipy.com/gifs/feur-theobabac"
+            "Feur, évidemment.",
+            "quoikoufeur"
         ]
     }
 ];
@@ -699,52 +337,26 @@ const REGLES = [
 // =====================================================
 
 function pick(arr) {
-    return arr[
-        Math.floor(
-            Math.random() *
-            arr.length
-        )
-    ];
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function run(cmd) {
-    execSync(
-        cmd,
-        {
-            stdio: "inherit"
-        }
-    );
+    execSync(cmd, { stdio: "inherit" });
 }
 
-async function safeSend(
-    channel,
-    content
-) {
+async function safeSend(channel, content) {
     try {
-        return await channel.send(
-            content
-        );
+        return await channel.send(content);
     } catch (e) {
-        console.error(
-            "send error :",
-            e
-        );
+        console.error("send error :", e);
     }
 }
 
-async function safeReply(
-    message,
-    content
-) {
+async function safeReply(message, content) {
     try {
-        return await message.reply(
-            content
-        );
+        return await message.reply(content);
     } catch (e) {
-        console.error(
-            "reply error :",
-            e
-        );
+        console.error("reply error :", e);
     }
 }
 
@@ -752,629 +364,216 @@ async function safeReply(
 // 🚨 GESTION DES ERREURS
 // =====================================================
 
-client.on(
-    "error",
-    err =>
-        console.error(
-            "CLIENT ERROR :",
-            err
-        )
+client.on("error", err =>
+    console.error("CLIENT ERROR :", err)
 );
 
-process.on(
-    "unhandledRejection",
-    err =>
-        console.error(
-            "REJECTION :",
-            err
-        )
+process.on("unhandledRejection", err =>
+    console.error("REJECTION :", err)
 );
 
-process.on(
-    "uncaughtException",
-    err =>
-        console.error(
-            "EXCEPTION :",
-            err
-        )
+process.on("uncaughtException", err =>
+    console.error("EXCEPTION :", err)
 );
 
 // =====================================================
 // 🟢 BOT PRÊT
 // =====================================================
 
-client.once(
-    Events.ClientReady,
-    async () => {
+client.once(Events.ClientReady, async () => {
+    console.log(`Connecté en tant que ${client.user.tag}`);
 
-        console.log(
-            `Connecté en tant que ${client.user.tag}`
-        );
-
-        try {
-            await client.user.setPresence({
-                status: "online",
-
-                activities: [
-                    {
-                        name: "vos messages",
-                        type: 3
-                    }
-                ]
-            });
-        } catch (err) {
-            console.error(err);
-        }
-
-        // Vérification des rôles au démarrage.
-        // Aucun téléchargement massif des membres.
-
-        try {
-            const stats =
-                await getStats();
-
-            for (
-                const guild of
-                client.guilds.cache.values()
-            ) {
-                await checkAndAssignRoles(
-                    guild,
-                    stats
-                );
-            }
-
-            console.log(
-                "Statistiques des membres synchronisées."
-            );
-
-        } catch (err) {
-            console.error(
-                "Erreur lors de la synchronisation des membres :",
-                err
-            );
-        }
+    try {
+        await client.user.setPresence({
+            status: "online",
+            activities: [
+                {
+                    name: "vos messages",
+                    type: 3
+                }
+            ]
+        });
+    } catch (e) {
+        console.error("Erreur présence :", e);
     }
-);
 
-// =====================================================
-// 👤 NOUVEAU MEMBRE
-// =====================================================
-
-client.on(
-    Events.GuildMemberAdd,
-    async member => {
-
-        if (member.user.bot) return;
-
-        try {
-            const stats =
-                await getStats();
-
-            if (
-                !stats.users[
-                    member.id
-                ]
-            ) {
-                stats.users[
-                    member.id
-                ] = {
-                    username:
-                        member.user.username,
-                    count: 0,
-                    feur: 0,
-                    pourquoi: 0,
-                    sexuel: 0,
-                    raciste: 0,
-                    autre: 0
-                };
-
-                await saveStats(
-                    stats
-                );
-
-                console.log(
-                    `Nouveau membre ajouté aux statistiques : ${member.user.tag}`
-                );
-            }
-
-            await checkAndAssignRoles(
-                member.guild,
-                stats
-            );
-
-        } catch (err) {
-            console.error(
-                "Erreur lors de l'ajout du nouveau membre aux statistiques :",
-                err
-            );
-        }
+    for (const guild of client.guilds.cache.values()) {
+        const stats = await getStats();
+        await checkAndAssignRoles(guild, stats);
     }
-);
+});
 
 // =====================================================
 // 💬 MESSAGES
 // =====================================================
 
-client.on(
-    "messageCreate",
-    async message => {
+client.on(Events.MessageCreate, async message => {
+    if (message.author.bot) return;
 
-        if (message.author.bot)
-            return;
+    const texte = message.content.trim();
 
-        const texte =
-            message.content
-                .toLowerCase()
-                .trim();
+    if (!texte) return;
 
-        // =================================================
-        // 🌐 !site
-        // =================================================
+    // -------------------------------------------------
+    // !stats
+    // -------------------------------------------------
 
-        if (texte === "!site") {
-            return safeReply(
-                message,
-                "📊 Découvre le tableau de bord de la Feur-Mania en direct ici : https://bot-feur-3qcy.onrender.com/"
-            );
+    if (texte === "!stats") {
+        const stats = await getStats();
+
+        const topUsers = Object.entries(stats.users)
+            .sort(([, a], [, b]) => (b.count || 0) - (a.count || 0))
+            .slice(0, 5);
+
+        let affichageTop = "";
+
+        if (topUsers.length === 0) {
+            affichageTop =
+                "Aucune donnée disponible pour le moment.";
+        } else {
+            const medailles = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+            topUsers.forEach(([id, data], index) => {
+                affichageTop +=
+                    `${medailles[index]} **${data.username}** : ` +
+                    `${data.count || 0} événements ` +
+                    `(Feur: ${data.feur || 0}, ` +
+                    `Pourquoi: ${data.pourquoi || 0}, ` +
+                    `Modération: ${data.moderation || 0}, ` +
+                    `Signalement: ${data.signalement || 0})\n`;
+            });
         }
 
-        // =================================================
-        // 😈 !injectertriche
-        // =================================================
-
-        if (texte === "!triche") {
-
-            if (
-                message.author.id !==
-                OWNER_ID
-            ) {
-                return;
-            }
-
-            const statsTrichees = {
-
-                users: {
-
-                    [OWNER_ID]: {
-                        username:
-                            "limule_26543",
-                        count: 0,
-                        feur: 0,
-                        pourquoi: 0,
-                        sexuel: 0,
-                        raciste: 0,
-                        autre: 0
-                    }
-
-                }
-            };
-
-            const stats =
-                await getStats();
-
-            stats.users[
-                OWNER_ID
-            ] =
-                statsTrichees.users[
-                    OWNER_ID
-                ];
-
-            stats.total =
-                Object.values(
-                    stats.users
-                )
-                    .reduce(
-                        (
-                            total,
-                            user
-                        ) =>
-                            total +
-                            (
-                                user.count ||
-                                0
-                            ),
-                        0
-                    );
-
-            await saveStats(
-                stats
-            );
-
-            await checkAndAssignRoles(
-                message.guild,
-                stats
-            );
-
-            return safeReply(
-                message,
-                `Triche injectée pour limule_26543. Total global : ${stats.total} fautes.`
-            );
-        }
-
-        // =================================================
-        // 📊 !stats
-        // =================================================
-
-        if (texte === "!stats") {
-
-            const stats =
-                await getStats();
-
-            const topUsers =
-                Object.entries(
-                    stats.users
-                )
-                    .sort(
-                        (a, b) =>
-                            (
-                                b[1].count ||
-                                0
-                            ) -
-                            (
-                                a[1].count ||
-                                0
-                            )
-                    )
-                    .slice(
-                        0,
-                        5
-                    );
-
-            let affichageTop =
-                "";
-
-            const medailles = [
-                "🥇",
-                "🥈",
-                "🥉",
-                "4️⃣",
-                "5️⃣"
-            ];
-
-            if (
-                topUsers.length ===
-                0
-            ) {
-
-                affichageTop =
-                    "Personne ne s'est encore fait avoir... Pour l'instant. 👀";
-
-            } else {
-
-                topUsers.forEach(
-                    (
-                        [
-                            id,
-                            data
-                        ],
-                        index
-                    ) => {
-
-                        affichageTop +=
-                            `${medailles[index]} **${data.username}** : ${data.count || 0} fautes ` +
-                            `(Feur: ${data.feur || 0}, ` +
-                            `Pourquoi: ${data.pourquoi || 0}, ` +
-                            `Sexuel: ${data.sexuel || 0}, ` +
-                            `Raciste: ${data.raciste || 0})\n`;
-                    }
-                );
-            }
-
-            return safeReply(
-                message,
-                `📊 **TABLEAU DE BORD DE LA FEUR-MANIA**\n\n` +
-                `🏆 **LE TOP DES VICTIMES :**\n` +
-                `${affichageTop}\n` +
-                `📈 **STATISTIQUES GLOBALES :**\n` +
-                `* 🎯 **Total de pièges déclenchés :** ${stats.total}`
-            );
-        }
-
-        // =================================================
-        // 🤖 MENTION DU BOT
-        // =================================================
-
-        if (
-            message.mentions.has(
-                client.user.id
-            ) &&
-            !message.mentions.everyone
-        ) {
-
-            return safeReply(
-                message,
-                pick([
-                    "Quoi ? 👀",
-                    "On m'appelle ? 🤖",
-                    "Dis feur pour voir.",
-                    "tg tu es chiant",
-                    "suce mes bits",
-                    "montre moi ta grosse clé usb !"
-                ])
-            );
-        }
-
-        // =================================================
-        // 🚀 !deploy
-        // =================================================
-
-        if (
-            message.content ===
-            "!deploy"
-        ) {
-
-            if (
-                message.author.id !==
-                OWNER_ID
-            ) {
-                return;
-            }
-
-            const row =
-                new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId(
-                                "deploy_git"
-                            )
-                            .setLabel(
-                                "🚀 Push GitHub"
-                            )
-                            .setStyle(
-                                ButtonStyle.Success
-                            )
-                    );
-
-            return safeSend(
-                message.channel,
-                {
-                    content:
-                        "Déploiement disponible :",
-                    components: [
-                        row
-                    ]
-                }
-            );
-        }
-
-        // =================================================
-        // 📜 TRAITEMENT DES RÈGLES
-        // =================================================
-
-        for (
-            const rule of REGLES
-        ) {
-
-            if (
-                rule.match(texte)
-            ) {
-
-                const stats =
-                    await getStats();
-
-                const userId =
-                    message.author.id;
-
-                // Total global
-
-                stats.total += 1;
-
-                // Création de l'utilisateur
-
-                if (
-                    !stats.users[
-                        userId
-                    ]
-                ) {
-
-                    stats.users[
-                        userId
-                    ] = {
-                        username:
-                            message.author.username,
-
-                        count: 0,
-                        feur: 0,
-                        pourquoi: 0,
-                        sexuel: 0,
-                        raciste: 0,
-                        autre: 0
-                    };
-                }
-
-                // Sécurisation des anciennes statistiques
-
-                if (
-                    stats.users[
-                        userId
-                    ].count ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].count = 0;
-                }
-
-                if (
-                    stats.users[
-                        userId
-                    ].feur ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].feur = 0;
-                }
-
-                if (
-                    stats.users[
-                        userId
-                    ].pourquoi ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].pourquoi = 0;
-                }
-
-                if (
-                    stats.users[
-                        userId
-                    ].sexuel ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].sexuel = 0;
-                }
-
-                if (
-                    stats.users[
-                        userId
-                    ].raciste ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].raciste = 0;
-                }
-
-                if (
-                    stats.users[
-                        userId
-                    ].autre ===
-                    undefined
-                ) {
-                    stats.users[
-                        userId
-                    ].autre = 0;
-                }
-
-                // Incrémentation du total utilisateur
-
-                stats.users[
-                    userId
-                ].count += 1;
-
-                // Incrémentation de la catégorie
-
-                if (
-                    rule.type &&
-                    stats.users[
-                        userId
-                    ][
-                        rule.type
-                    ] !== undefined
-                ) {
-
-                    stats.users[
-                        userId
-                    ][
-                        rule.type
-                    ] += 1;
-
-                } else {
-
-                    stats.users[
-                        userId
-                    ].autre += 1;
-                }
-
-                // Mise à jour du pseudo
-
-                stats.users[
-                    userId
-                ].username =
-                    message.author.username;
-
-                // Sauvegarde
-
-                await saveStats(
-                    stats
-                );
-
-                // Attribution automatique des rôles
-
-                await checkAndAssignRoles(
-                    message.guild,
-                    stats
-                );
-
-                // Réponse du bot
-
-                return safeReply(
-                    message,
-                    pick(
-                        rule.responses
-                    )
-                );
-            }
-        }
+        return safeReply(
+            message,
+            `📊 **TABLEAU DE BORD DE LA FEUR-MANIA**\n\n` +
+            `🏆 **CLASSEMENT :**\n${affichageTop}\n` +
+            `📈 **STATISTIQUES GLOBALES :**\n` +
+            `🎯 **Total d'événements :** ${stats.total}`
+        );
     }
-);
+
+    // -------------------------------------------------
+    // Mention du bot
+    // -------------------------------------------------
+
+    if (
+        message.mentions.has(client.user.id) &&
+        !message.mentions.everyone
+    ) {
+        return safeReply(
+            message,
+            pick([
+                "Quoi ?",
+                "On m'appelle ?",
+                "Dis feur pour voir.",
+                "Le bot est opérationnel.",
+                "Système en ligne."
+            ])
+        );
+    }
+
+    // -------------------------------------------------
+    // !deploy
+    // -------------------------------------------------
+
+    if (texte === "!deploy") {
+        if (message.author.id !== OWNER_ID) return;
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("deploy_git")
+                .setLabel("Push GitHub")
+                .setStyle(ButtonStyle.Success)
+        );
+
+        return safeSend(message.channel, {
+            content: "Déploiement disponible :",
+            components: [row]
+        });
+    }
+
+    // -------------------------------------------------
+    // Traitement des règles
+    // -------------------------------------------------
+
+    for (const rule of REGLES) {
+        if (!rule.match(texte)) continue;
+
+        const stats = await getStats();
+        const userId = message.author.id;
+
+        stats.total += 1;
+
+        if (!stats.users[userId]) {
+            stats.users[userId] = {
+                username: message.author.username,
+                count: 0,
+                feur: 0,
+                pourquoi: 0,
+                moderation: 0,
+                signalement: 0,
+                autre: 0
+            };
+        }
+
+        const userStats = stats.users[userId];
+
+        userStats.count = userStats.count || 0;
+        userStats.feur = userStats.feur || 0;
+        userStats.pourquoi = userStats.pourquoi || 0;
+        userStats.moderation = userStats.moderation || 0;
+        userStats.signalement = userStats.signalement || 0;
+        userStats.autre = userStats.autre || 0;
+
+        userStats.count += 1;
+        userStats.username = message.author.username;
+
+        if (rule.type && userStats[rule.type] !== undefined) {
+            userStats[rule.type] += 1;
+        } else {
+            userStats.autre += 1;
+        }
+
+        await saveStats(stats);
+        await checkAndAssignRoles(message.guild, stats);
+
+        return safeReply(message, pick(rule.responses));
+    }
+});
 
 // =====================================================
 // 🚀 BOUTON DE DÉPLOIEMENT
 // =====================================================
 
-client.on(
-    Events.InteractionCreate,
-    async interaction => {
+client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isButton()) return;
+    if (interaction.user.id !== OWNER_ID) return;
 
-        if (
-            !interaction.isButton() ||
-            interaction.user.id !==
-                OWNER_ID
-        ) {
-            return;
-        }
+    if (interaction.customId === "deploy_git") {
+        try {
+            await interaction.reply({
+                content: "Déploiement en cours...",
+                ephemeral: true
+            });
 
-        if (
-            interaction.customId ===
-            "deploy_git"
-        ) {
+            run("node deploy.js");
 
-            try {
+            await interaction.followUp({
+                content: "Push terminé. Redémarrage..."
+            });
 
-                await interaction.reply({
-                    content:
-                        "Déploiement en cours...",
-                    ephemeral: true
-                });
-
-                run(
-                    "node deploy.js"
-                );
-
-                await interaction.followUp({
-                    content:
-                        "✅ Push terminé. Redémarrage..."
-                });
-
-                setTimeout(
-                    () =>
-                        process.exit(0),
-                    1500
-                );
-
-            } catch (e) {
-
-                console.error(e);
-            }
+            setTimeout(() => process.exit(0), 1500);
+        } catch (e) {
+            console.error(e);
         }
     }
-);
+});
 
 // =====================================================
 // 🔑 CONNEXION DISCORD
 // =====================================================
 
-client.login(
-    process.env.TOKEN
-).catch(
-    err =>
-        console.error(
-            "❌ Login erreur :",
-            err
-        )
+client.login(process.env.TOKEN).catch(err =>
+    console.error("Login erreur :", err)
 );
