@@ -1,7 +1,7 @@
 # Bot Feur - version CV
 
-Version de démonstration du projet personnel **Bot Feur**, préparée pour une
-présentation dans un contexte scolaire ou professionnel.
+Version de démonstration du projet personnel **Bot Feur** (non fonctionnelle), préparée pour une
+présentation dans un contexte scolaire.
 
 Cette branche conserve l'architecture technique du projet tout en utilisant
 des déclencheurs et réponses neutres dans le code public de démonstration.
@@ -28,26 +28,19 @@ des déclencheurs et réponses neutres dans le code public de démonstration.
 - Chart.js
 - Git / GitHub
 
-## Lancer le projet
-
-```bash
-npm install
-npm start
-```
-
 Les variables d'environnement nécessaires sont notamment :
 
 ```text
 TOKEN=...
 OWNER_ID=...
 REDIS_URL=...
-PORT=3000
+WEBHOOK_URL1=...
+WEBHOOK_URL2=...
 ```
 
-Ne jamais publier le fichier `.env` ou un token Discord.
 
 ## Version CV
 
 Cette branche est destinée à montrer les compétences techniques du projet
-sans exposer les contenus humoristiques ou les données de test utilisés dans
+sans exposer les contenus humoristiques/problématiques ou les données de test utilisés dans
 la version personnelle originale.
