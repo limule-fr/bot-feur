@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "commit": "git add . && git commit -m \"[$(date '+%d/%m/%Y %H:%M')]\" && node scripts/post-commit.js && git push origin main",
+    "commit": "git add . && git commit -m \"[$(date '+%d/%m/%Y %H:%M')]\" && git push origin main",
     "backup-stats": "node scripts/backup-stats.js"
   },
   "keywords": [],
