@@ -507,6 +507,42 @@ http.createServer(
             );
         }
 
+                // =================================================
+        // 📜 PAGES LÉGALES
+        // =================================================
+
+        else if (
+            rawUrl === "/mentions-legales.html" ||
+            rawUrl === "/confidentialite.html"
+        ) {
+            const pagePath = path.join(
+                __dirname,
+                rawUrl.slice(1)
+            );
+
+            fs.readFile(
+                pagePath,
+                "utf8",
+                (err, htmlContent) => {
+                    if (err) {
+                        res.writeHead(404, {
+                            "Content-Type": "text/plain; charset=utf-8"
+                        });
+
+                        return res.end(
+                            "Page non trouvée"
+                        );
+                    }
+
+                    res.writeHead(200, {
+                        "Content-Type": "text/html; charset=utf-8"
+                    });
+
+                    return res.end(htmlContent);
+                }
+            );
+        }
+        
         // =================================================
         // ❌ PAGE INEXISTANTE
         // =================================================
