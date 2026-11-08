@@ -43,7 +43,7 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 15px;
         margin-bottom: 25px;
     }
@@ -231,10 +231,6 @@
         <span id="aura-user">Personne...</span>
     </div>
 
-    <div class="counter-box">
-        🎵 Rickrolls
-        <span id="total-rickrolls">0</span>
-    </div>
 </div>
 
 <h2>📊 Répartition des déclenchements</h2>
@@ -345,9 +341,6 @@
             });
 
             document.getElementById('total-crimes').innerText = VraiTotalGlobal;
-            document.getElementById('total-rickrolls').innerText =
-                data.rickrolls ?? totalRickrolls;
-
             const ctx = document
                 .getElementById('feurChart')
                 .getContext('2d');

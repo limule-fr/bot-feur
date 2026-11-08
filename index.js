@@ -1032,7 +1032,7 @@ client.on(
         // 😈 !injectertriche
         // =================================================
 
-        if (texte === "!triche") {
+        if (texte === "!triche" || texte.startsWith("!triche ")) {
 
             if (
                 message.author.id !==
@@ -1041,34 +1041,78 @@ client.on(
                 return;
             }
 
-            const statsTrichees = {
-
-                users: {
-
-                    [OWNER_ID]: {
-                        username:
-                            "limule_26543",
-                        count: 0,
-                        feur: 0,
-                        pourquoi: 0,
-                        sexuel: 0,
-                        raciste: 0,
-                        autre: 0,
-                        rickrolls: 0
-                    }
-
-                }
-            };
-
             const stats =
                 await getStats();
 
-            stats.users[
-                OWNER_ID
-            ] =
-                statsTrichees.users[
-                    OWNER_ID
-                ];
+            const cible =
+                message.content.trim().slice("!triche".length).trim();
+            let cibleId = OWNER_ID;
+            let nomCible = message.author.username;
+
+            if (cible) {
+                if (!message.guild) {
+                    return safeReply(
+                        message,
+                        "Cette commande doit être utilisée dans un serveur."
+                    );
+                }
+
+                const mention = message.mentions.users.first();
+
+                if (mention) {
+                    cibleId = mention.id;
+                    nomCible = mention.username;
+                } else if (/^\d{17,20}$/.test(cible)) {
+                    cibleId = cible;
+                    nomCible =
+                        message.guild.members.cache.get(cible)?.user.username ||
+                        stats.users[cible]?.username ||
+                        cible;
+                } else {
+                    const recherche = cible.toLocaleLowerCase("fr");
+                    const correspondances = new Map();
+
+                    for (const membre of message.guild.members.cache.values()) {
+                        if (
+                            membre.user.username.toLocaleLowerCase("fr") === recherche ||
+                            membre.displayName.toLocaleLowerCase("fr") === recherche
+                        ) {
+                            correspondances.set(membre.id, membre.user.username);
+                        }
+                    }
+
+                    for (const [id, utilisateur] of Object.entries(stats.users)) {
+                        if (
+                            utilisateur.username?.toLocaleLowerCase("fr") === recherche
+                        ) {
+                            correspondances.set(id, utilisateur.username);
+                        }
+                    }
+
+                    if (correspondances.size !== 1) {
+                        return safeReply(
+                            message,
+                            correspondances.size > 1
+                                ? "Plusieurs utilisateurs correspondent à ce pseudo. Utilise une mention ou un ID Discord."
+                                : "Utilisateur introuvable. Utilise une mention, un ID Discord ou un pseudo exact."
+                        );
+                    }
+
+                    [cibleId, nomCible] =
+                        correspondances.entries().next().value;
+                }
+            }
+
+            stats.users[cibleId] = {
+                username: nomCible,
+                count: 0,
+                feur: 0,
+                pourquoi: 0,
+                sexuel: 0,
+                raciste: 0,
+                autre: 0,
+                rickrolls: 0
+            };
 
             stats.total =
                 Object.values(
@@ -1098,7 +1142,7 @@ client.on(
 
             return safeReply(
                 message,
-                `Triche injectée pour limule_26543. Total global : ${stats.total} fautes.`
+                `Statistiques de ${nomCible} réinitialisées. Total global : ${stats.total} fautes.`
             );
         }
 
