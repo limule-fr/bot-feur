@@ -1,10 +1,11 @@
 {
-    "total": 83,
+    "total": 87,
+    "rickrolls": 0,
     "users": {
         "1483115316144771082": {
             "username": "limule_26543",
-            "count": 0,
-            "feur": 0,
+            "count": 1,
+            "feur": 1,
             "pourquoi": 0,
             "sexuel": 0,
             "raciste": 0,
@@ -39,8 +40,8 @@
         },
         "1495156972582998086": {
             "username": "noctalune44",
-            "count": 0,
-            "feur": 0,
+            "count": 2,
+            "feur": 2,
             "pourquoi": 0,
             "sexuel": 0,
             "raciste": 0,
@@ -57,9 +58,9 @@
         },
         "1039956066898812969": {
             "username": "shaolyngo",
-            "count": 0,
+            "count": 1,
             "feur": 0,
-            "pourquoi": 0,
+            "pourquoi": 1,
             "sexuel": 0,
             "raciste": 0,
             "autre": 0

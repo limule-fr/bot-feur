@@ -43,9 +43,15 @@
 
     .stats-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 15px;
         margin-bottom: 25px;
+    }
+
+    @media (max-width: 560px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .counter-box {
@@ -171,6 +177,11 @@
         color: #fff;
     }
 
+    .badge-rickroll {
+        background-color: #8e44ad;
+        color: #fff;
+    }
+
     .loading {
         color: #8a99ad;
         font-style: italic;
@@ -219,9 +230,14 @@
         👑 Aura Farmeur (+999 aura)
         <span id="aura-user">Personne...</span>
     </div>
+
+    <div class="counter-box">
+        🎵 Rickrolls
+        <span id="total-rickrolls">0</span>
+    </div>
 </div>
 
-<h2>📊 Répartition des fautes</h2>
+<h2>📊 Répartition des déclenchements</h2>
 
 <div class="chart-container">
     <canvas id="feurChart" width="300" height="300"></canvas>
@@ -260,6 +276,7 @@
             let totalSexuel = 0;
             let totalRaciste = 0;
             let totalAutre = 0;
+            let totalRickrolls = 0;
 
             let auraUser = "Personne...";
 
@@ -278,6 +295,7 @@
                 totalSexuel += (user.sexuel || 0);
                 totalRaciste += (user.raciste || 0);
                 totalAutre += (user.autre || 0);
+                totalRickrolls += (user.rickrolls || 0);
 
                 const medal = medals[index] || "👤";
 
@@ -316,6 +334,10 @@
                         <span class="badge badge-autre">
                             ⚙️ Autre : ${user.autre}
                         </span>
+
+                        <span class="badge badge-rickroll">
+                            🎵 Rickrolls : ${user.rickrolls || 0}
+                        </span>
                     </div>
                 `;
 
@@ -323,6 +345,8 @@
             });
 
             document.getElementById('total-crimes').innerText = VraiTotalGlobal;
+            document.getElementById('total-rickrolls').innerText =
+                data.rickrolls ?? totalRickrolls;
 
             const ctx = document
                 .getElementById('feurChart')
@@ -341,18 +365,20 @@
                         'Pourquoi',
                         'Sexuel',
                         'Raciste',
-                        'Autre'
+                        'Autre',
+                        'Rickrolls'
                     ],
 
                     datasets: [{
-                        label: 'Infractions',
+                        label: 'Déclenchements',
 
                         data: [
                             totalFeur,
                             totalPourquoi,
                             totalSexuel,
                             totalRaciste,
-                            totalAutre
+                            totalAutre,
+                            totalRickrolls
                         ],
 
                         backgroundColor: 'rgba(228, 63, 90, 0.25)',

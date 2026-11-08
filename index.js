@@ -73,6 +73,7 @@ async function getStats() {
                 ? JSON.parse(data)
                 : {
                     total: 0,
+                    rickrolls: 0,
                     users: {}
                 };
         } catch (e) {
@@ -83,6 +84,7 @@ async function getStats() {
 
             return {
                 total: 0,
+                rickrolls: 0,
                 users: {}
             };
         }
@@ -99,6 +101,7 @@ async function getStats() {
             JSON.stringify(
                 {
                     total: 0,
+                    rickrolls: 0,
                     users: {}
                 },
                 null,
@@ -122,6 +125,7 @@ async function getStats() {
 
         return {
             total: 0,
+            rickrolls: 0,
             users: {}
         };
     }
@@ -424,7 +428,9 @@ http.createServer(
                                 raciste:
                                     data.raciste || 0,
                                 autre:
-                                    data.autre || 0
+                                    data.autre || 0,
+                                rickrolls:
+                                    data.rickrolls || 0
                             })
                         )
                         .sort(
@@ -439,6 +445,8 @@ http.createServer(
                     JSON.stringify({
                         total:
                             stats.total,
+                        rickrolls:
+                            stats.rickrolls || 0,
                         ranking:
                             topUsers
                     })
@@ -449,6 +457,7 @@ http.createServer(
                 return res.end(
                     JSON.stringify({
                         total: 0,
+                        rickrolls: 0,
                         ranking: [],
                         error:
                             error.message
@@ -734,6 +743,57 @@ const REGLES = [
 // 🛠️ FONCTIONS UTILITAIRES
 // =====================================================
 
+const RICKROLL_URL =
+    "https://klipy.com/gifs/rick-astly-rick-rolled";
+
+function maybeRickroll(content) {
+    const rickrolled = Math.random() < 0.05;
+
+    return {
+        content: rickrolled
+            ? typeof content === "string"
+                ? RICKROLL_URL
+                : {
+                    ...content,
+                    content: RICKROLL_URL
+                }
+            : content,
+        rickrolled
+    };
+}
+
+async function recordRickroll(user) {
+    const stats = await getStats();
+    stats.rickrolls = (stats.rickrolls || 0) + 1;
+
+    if (!stats.users[user.id]) {
+        stats.users[user.id] = {
+            username: user.username,
+            count: 0,
+            feur: 0,
+            pourquoi: 0,
+            sexuel: 0,
+            raciste: 0,
+            autre: 0,
+            rickrolls: 0
+        };
+    }
+
+    stats.users[user.id].username = user.username;
+    stats.users[user.id].rickrolls =
+        (stats.users[user.id].rickrolls || 0) + 1;
+
+    await saveStats(stats);
+}
+
+async function recordRickrollSafely(user) {
+    try {
+        await recordRickroll(user);
+    } catch (e) {
+        console.error("Erreur d'enregistrement du rickroll :", e);
+    }
+}
+
 function pick(arr) {
     return arr[
         Math.floor(
@@ -754,12 +814,19 @@ function run(cmd) {
 
 async function safeSend(
     channel,
-    content
+    content,
+    user
 ) {
+    const response = maybeRickroll(content);
+
     try {
-        return await channel.send(
-            content
-        );
+        const sent = await channel.send(response.content);
+
+        if (response.rickrolled) {
+            await recordRickrollSafely(user);
+        }
+
+        return sent;
     } catch (e) {
         console.error(
             "send error :",
@@ -772,10 +839,16 @@ async function safeReply(
     message,
     content
 ) {
+    const response = maybeRickroll(content);
+
     try {
-        return await message.reply(
-            content
-        );
+        const sent = await message.reply(response.content);
+
+        if (response.rickrolled) {
+            await recordRickrollSafely(message.author);
+        }
+
+        return sent;
     } catch (e) {
         console.error(
             "reply error :",
@@ -901,7 +974,8 @@ client.on(
                     pourquoi: 0,
                     sexuel: 0,
                     raciste: 0,
-                    autre: 0
+                    autre: 0,
+                    rickrolls: 0
                 };
 
                 await saveStats(
@@ -979,7 +1053,8 @@ client.on(
                         pourquoi: 0,
                         sexuel: 0,
                         raciste: 0,
-                        autre: 0
+                        autre: 0,
+                        rickrolls: 0
                     }
 
                 }
@@ -1091,7 +1166,8 @@ client.on(
                             `(Feur: ${data.feur || 0}, ` +
                             `Pourquoi: ${data.pourquoi || 0}, ` +
                             `Sexuel: ${data.sexuel || 0}, ` +
-                            `Raciste: ${data.raciste || 0})\n`;
+                            `Raciste: ${data.raciste || 0}, ` +
+                            `Rickrolls: ${data.rickrolls || 0})\n`;
                     }
                 );
             }
@@ -1102,7 +1178,8 @@ client.on(
                 `🏆 **LE TOP DES VICTIMES :**\n` +
                 `${affichageTop}\n` +
                 `📈 **STATISTIQUES GLOBALES :**\n` +
-                `* 🎯 **Total de pièges déclenchés :** ${stats.total}`
+                `* 🎯 **Total de pièges déclenchés :** ${stats.total}\n` +
+                `* 🎵 **Rickrolls :** ${stats.rickrolls || 0}`
             );
         }
 
@@ -1169,7 +1246,8 @@ client.on(
                     components: [
                         row
                     ]
-                }
+                },
+                message.author
             );
         }
 
@@ -1214,7 +1292,8 @@ client.on(
                         pourquoi: 0,
                         sexuel: 0,
                         raciste: 0,
-                        autre: 0
+                        autre: 0,
+                        rickrolls: 0
                     };
                 }
 
@@ -1372,11 +1451,16 @@ client.on(
 
             try {
 
-                await interaction.reply({
-                    content:
-                        "Déploiement en cours...",
+                const response = maybeRickroll({
+                    content: "Déploiement en cours...",
                     ephemeral: true
                 });
+
+                await interaction.reply(response.content);
+
+                if (response.rickrolled) {
+                    await recordRickrollSafely(interaction.user);
+                }
 
                 run(
                     "node deploy.js"
